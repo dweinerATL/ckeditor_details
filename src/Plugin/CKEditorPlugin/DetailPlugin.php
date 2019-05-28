@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\ckeditor_detail\Plugin\CKEditorPlugin\DetailPlugin.
- */
-
 namespace Drupal\ckeditor_detail\Plugin\CKEditorPlugin;
 
 use Drupal\ckeditor\CKEditorPluginInterface;
@@ -25,8 +20,8 @@ class DetailPlugin extends PluginBase implements CKEditorPluginInterface, CKEdit
   /**
    * Implements \Drupal\ckeditor\Plugin\CKEditorPluginInterface::getDependencies().
    */
-  function getDependencies(Editor $editor) {
-    return array();
+  public function getDependencies(Editor $editor) {
+    return [];
   }
 
   /**
@@ -39,14 +34,14 @@ class DetailPlugin extends PluginBase implements CKEditorPluginInterface, CKEdit
   /**
    * Implements \Drupal\ckeditor\Plugin\CKEditorPluginInterface::isInternal().
    */
-  function isInternal() {
+  public function isInternal() {
     return FALSE;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getConfig(Editor $editor) {
+  public public function getConfig(Editor $editor) {
     return [];
   }
 
@@ -54,12 +49,12 @@ class DetailPlugin extends PluginBase implements CKEditorPluginInterface, CKEdit
    * {@inheritdoc}
    */
   public function getButtons() {
-    return array(
-      'detail' => array(
+    return [
+      'detail' => [
         'label' => t('Add accordion'),
         'image' => drupal_get_path('module', 'ckeditor_detail') . '/js/plugins/detail/icons/detail.png',
-      ),
-    );
+      ],
+    ];
   }
 
   /**
@@ -68,4 +63,5 @@ class DetailPlugin extends PluginBase implements CKEditorPluginInterface, CKEdit
   public function getFile() {
     return drupal_get_path('module', 'ckeditor_detail') . '/js/plugins/detail/plugin.js';
   }
+
 }
