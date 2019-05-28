@@ -41,7 +41,7 @@ class DetailPlugin extends PluginBase implements CKEditorPluginInterface, CKEdit
   /**
    * {@inheritdoc}
    */
-  public public function getConfig(Editor $editor) {
+  public function getConfig(Editor $editor) {
     return [];
   }
 
