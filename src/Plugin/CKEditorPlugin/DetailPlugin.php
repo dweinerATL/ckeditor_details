@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\ckeditor_detail\Plugin\CKEditorPlugin;
+namespace Drupal\ckeditor_details\Plugin\CKEditorPlugin;
 
 use Drupal\ckeditor\CKEditorPluginInterface;
 use Drupal\ckeditor\CKEditorPluginButtonsInterface;
@@ -52,7 +52,7 @@ class DetailPlugin extends PluginBase implements CKEditorPluginInterface, CKEdit
     return [
       'detail' => [
         'label' => t('Add accordion'),
-        'image' => drupal_get_path('module', 'ckeditor_detail') . '/js/plugins/detail/icons/detail.png',
+        'image' => drupal_get_path('module', 'ckeditor_details') . '/js/plugins/detail/icons/detail.png',
       ],
     ];
   }
@@ -61,7 +61,7 @@ class DetailPlugin extends PluginBase implements CKEditorPluginInterface, CKEdit
    * {@inheritdoc}
    */
   public function getFile() {
-    return drupal_get_path('module', 'ckeditor_detail') . '/js/plugins/detail/plugin.js';
+    return drupal_get_path('module', 'ckeditor_details') . '/js/plugins/detail/plugin.js';
   }
 
 }
