@@ -9,6 +9,6 @@
  * Implements hook_page_attachments().
  */
 function ckeditor_details_page_attachments(array &$page) {
-  // Require the shim to support details elements in older IE browsers.
+  // Add the shim to support details in older IE and pre-Chromium Edge browsers.
   $page['#attached']['library'][] = 'core/drupal.collapse';
 }
