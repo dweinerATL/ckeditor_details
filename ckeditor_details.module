@@ -1,0 +1,14 @@
+<?php
+
+/**
+ * @file
+ * Hook implementations for the CKeditor Details Accordion module.
+ */
+
+/**
+ * Implements hook_page_attachments().
+ */
+function ckeditor_details_page_attachments(array &$page) {
+  // Require the shim to support details elements in older IR browsers.
+  $page['#attached']['library'][] = 'core/drupal.collapse';
+}
