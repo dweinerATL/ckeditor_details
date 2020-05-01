@@ -64,6 +64,7 @@
    * DTD
    */
   CKEDITOR.dtd['$editable']['summary'] = 1;
+  CKEDITOR.dtd['$empty']['drupal-media'] = 1;
 
   /**
    * Plugin
