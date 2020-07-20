@@ -11,19 +11,6 @@
 'use strict';
 
   // Theme functions.
-  // Drupal.theme.deBitsAccordion = function (data) {
-  //   var accordion = '';
-  //   var i;
-  //
-  //   accordion = '<div class="card card--default card--accordion">';
-  //   for (i = 0; i < data.length; i += 1) {
-  //     accordion += Drupal.theme.deBitsAccordionItem(data[i]);
-  //   }
-  //   accordion += '</div>';
-  //
-  //   return accordion;
-  // };
-
   Drupal.theme.detail = function (item) {
     return '<details><summary>' + item.title + '</summary>' +
       item.content +
@@ -63,6 +50,7 @@
   /**
    * DTD
    */
+  CKEDITOR.dtd['$block']['summary'] = 1;
   CKEDITOR.dtd['$editable']['summary'] = 1;
   CKEDITOR.dtd['$empty']['drupal-media'] = 1;
 
@@ -84,7 +72,10 @@
               editables: {
                   summary: {
                       selector: 'summary',
-                      allowedContent: {}
+                      allowedContent: 'abbr br strong em small span strong sub sup time;'
+                        + 'drupal-media[data-entity-type,data-entity-uuid,data-align];'
+                        + 'img[!src,alt,width,height,data-entity-type,data-entity-uuid,data-align,data-caption];'
+                        + 'picture svg video'
                   },
                   content: {
                       selector: 'div.content'
@@ -100,11 +91,7 @@
                   var summary = el.getFirst('summary');
                   var content = new CKEDITOR.htmlParser.element('div', {'class': 'content'});
 
-                  if (!!summary && summary.children.length > 0 && summary.children[0].type === CKEDITOR.NODE_ELEMENT) {
-                      summary.setHtml(summary.children[0].getHtml());
-                  } else if (!!summary && summary.children.length > 0 && summary.children[0].type === CKEDITOR.NODE_TEXT) {
-                      summary.setHtml(summary.children[0].value);
-                  } else if (!summary) {
+                  if (!summary) {
                       el.add(new CKEDITOR.htmlParser.element('summary'), 0);
                   }
 
@@ -134,14 +121,22 @@
                   var summary = this.element.getChild(0);
 
                   summary.on('blur', function () {
-                      if (!summary.getText().trim()) {
+                      if (!summary.getText()) {
                           summary.setText(editor.lang.detail.title);
                       }
                   });
-                  summary.on('keyup', function (ev) {
-                      if (ev.data['$'].key === ' ' || ev.data['$'].keyCode === 32) {
+                  summary.on('keydown', function (ev) {
+                      if (ev.data['$'].key === ' ' || ev.data['$'].code === 'Space' || ev.data['$'].keyCode === 32) {
                           ev.data['$'].preventDefault();
-                          editor.insertText(' ');
+                          // Direct insertion of a space as HTML will be ignored at the end of the summary.
+                          editor.insertHtml(' &#8203;', 'html');
+
+                          // Delete the zero-wdith space and reset the cursor.
+                          var currentRange = editor.getSelection().getRanges()[0];
+                          var markup = summary.getHtml();
+                          markup = String(markup).replace(/\u200B/gi, '');
+                          summary.setHtml(markup);
+                          editor.getSelection().selectRanges( [ currentRange ] );
                       }
                   });
               }
@@ -160,34 +155,6 @@
               'details .cke_widget_editable {outline: none !important;}'
           );
       },
-      /**
-       * Adds element to parent at given index if it is not removable and returns true if element was added or
-       * false otherwise
-       *
-       * @param {CKEDITOR.htmlParser.element} el
-       * @param {CKEDITOR.htmlParser.element} parent
-       * @param {Number} [index = null]
-       *
-       * @return {Boolean}
-       */
-      add_to_parent: function (el, parent, index) {
-          if (!!el && !this.is_removable(el)) {
-              parent.add(el, index);
-              return true;
-          }
-
-          return false;
-      },
-      /**
-       * Indicates if element is removable because it is not en empty element and its inner HTML is empty
-       *
-       * @param {CKEDITOR.htmlParser.element} el
-       *
-       * @return {Boolean}
-       */
-      is_removable: function (el) {
-          return !!el && (el.type !== CKEDITOR.NODE_ELEMENT || !CKEDITOR.dtd.$empty[el.name] && !el.getHtml().trim());
-      }
   });
 
 }(jQuery, Drupal));
