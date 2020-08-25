@@ -53,6 +53,7 @@
   CKEDITOR.dtd['$block']['summary'] = 1;
   CKEDITOR.dtd['$editable']['summary'] = 1;
   CKEDITOR.dtd['$empty']['drupal-media'] = 1;
+  CKEDITOR.dtd['$empty']['drupal-entity'] = 1;
 
   /**
    * Plugin
