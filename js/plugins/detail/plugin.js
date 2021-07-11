@@ -10,43 +10,6 @@
 
 'use strict';
 
-  // Theme functions.
-  Drupal.theme.detail = function (item) {
-    return '<details><summary>' + item.title + '</summary>' +
-      item.content +
-    '</details>';
-  };
-
-  /**
-   * Adds element to parent at given index if it is not removable and returns true if element was added or
-   * false otherwise
-   *
-   * @param {CKEDITOR.htmlParser.element} el
-   * @param {CKEDITOR.htmlParser.element} parent
-   * @param {Number} [index = null]
-   *
-   * @return {Boolean}
-   */
-  function add_to_parent(el, parent, index) {
-      if (!!el && !is_removable(el)) {
-          parent.add(el, index);
-          return true;
-      }
-
-      return false;
-  }
-
-  /**
-   * Indicates if element is removable because it is not en empty element and its inner HTML is empty
-   *
-   * @param {CKEDITOR.htmlParser.element} el
-   *
-   * @return {Boolean}
-   */
-  function is_removable(el) {
-      return !!el && (el.type !== CKEDITOR.NODE_ELEMENT || !CKEDITOR.dtd.$empty[el.name] && !el.getHtml().trim());
-  }
-
   /**
    * DTD
    */
@@ -69,7 +32,7 @@
            */
           editor.widgets.add('detail', {
               button: editor.lang.detail.title,
-              template: '<details><summary>' + editor.lang.detail.title +'</summary><div class="content"></div></details>',
+              template: '<details><summary>' + editor.lang.detail.title + '</summary><div class="details-wrapper"></div></details>',
               editables: {
                   summary: {
                       selector: 'summary',
@@ -79,24 +42,38 @@
                         + 'picture svg video'
                   },
                   content: {
-                      selector: 'div.content'
+                      selector: '.details-wrapper',
                   }
               },
-              allowedContent: {details: true, summary: true},
-              requiredContent: 'details',
+              allowedContent: {
+                details: true,
+                summary: true,
+                div: {
+                  attributes: '!class',
+                  classes: 'details-wrapper'
+                }
+              },
+              requiredContent: new CKEDITOR.style({
+                element: 'div',
+                attributes: '!class',
+                classes: 'details-wrapper'
+              }),
               upcast: function (el) {
                   if (el.name !== 'details') {
                       return false;
                   }
 
                   var summary = el.getFirst('summary');
-                  var content = new CKEDITOR.htmlParser.element('div', {'class': 'content'});
 
                   if (!summary) {
                       el.add(new CKEDITOR.htmlParser.element('summary'), 0);
                   }
 
-                  el.add(content, 1);
+                  var content = el.getFirst('div');
+                  if (!content || !content.hasClass('details-wrapper')) {
+                    content = new CKEDITOR.htmlParser.element('div', {'class': 'details-wrapper'});
+                    el.add(content, 1);
+                  }
 
                   if (el.children.length > 2) {
                       content.children = el.children.slice(2);
@@ -105,19 +82,6 @@
 
                   return true;
               },
-              downcast: function (el) {
-                  el.attributes = [];
-                  el.children[0].attributes = [];
-
-                  // Content
-                  el.children[1].setHtml(this.editables.content.getData());
-                  el.children[1].children.forEach(function (item) {
-                      add_to_parent(item, el);
-                  });
-                  el.children[1].remove();
-
-                  return el.children.length > 1 ? el : new CKEDITOR.htmlParser.text('');
-              },
               init: function () {
                   var summary = this.element.getChild(0);
 
@@ -125,25 +89,27 @@
                       if (!summary.getText()) {
                           summary.setText(editor.lang.detail.title);
                       }
+                      // Delete any zero-width spaces.
+                      var markup = summary.getHtml();
+                      markup = String(markup).replace(/\u200B/gi, '');
+                      summary.setHtml(markup);
+                  });
+                  summary.on('keyup', function (ev) {
+                    if (ev.data['$'].keyCode === 8 && summary.getText().trim() === '') {
+                      editor.insertText('');
+                    }
                   });
                   summary.on('keydown', function (ev) {
                       if (ev.data['$'].key === ' ' || ev.data['$'].code === 'Space' || ev.data['$'].keyCode === 32) {
                           ev.data['$'].preventDefault();
                           // Direct insertion of a space as HTML will be ignored at the end of the summary.
-                          editor.insertHtml(' &#8203;', 'html');
-
-                          // Delete the zero-wdith space and reset the cursor.
-                          var currentRange = editor.getSelection().getRanges()[0];
-                          var markup = summary.getHtml();
-                          markup = String(markup).replace(/\u200B/gi, '');
-                          summary.setHtml(markup);
-                          editor.getSelection().selectRanges( [ currentRange ] );
+                          editor.document.$.execCommand('inserttext', false, ' ');
                       }
                   });
               }
           });
           editor.ui.addButton('detail', {
-            label: 'Add accordion',
+            label: Drupal.t('Add details'),
             command: 'detail',
             toolbar: 'insert',
           });
