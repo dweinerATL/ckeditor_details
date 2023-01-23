@@ -49,10 +49,11 @@ class DetailPlugin extends PluginBase implements CKEditorPluginInterface, CKEdit
    * {@inheritdoc}
    */
   public function getButtons() {
+    // @todo switch to dependency injection.
     return [
       'detail' => [
         'label' => t('Add accordion'),
-        'image' => drupal_get_path('module', 'ckeditor_details') . '/js/plugins/detail/icons/detail.png',
+        'image' => \Drupal::service('extension.list.module')->getPath('ckeditor_details') . '/js/plugins/detail/icons/detail.png',
       ],
     ];
   }
@@ -61,7 +62,8 @@ class DetailPlugin extends PluginBase implements CKEditorPluginInterface, CKEdit
    * {@inheritdoc}
    */
   public function getFile() {
-    return drupal_get_path('module', 'ckeditor_details') . '/js/plugins/detail/plugin.js';
+    // @todo switch to dependency injection.
+    return \Drupal::service('extension.list.module')->getPath('ckeditor_details') . '/js/plugins/detail/plugin.js';
   }
 
 }
