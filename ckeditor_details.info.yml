@@ -4,5 +4,3 @@ description: Adds an accordion toolbar button - using the detail plugin.
 core: 8.x
 core_version_requirement: ^8 || ^9
 package: CKEditor
-dependencies:
-  - drupal:ckeditor
