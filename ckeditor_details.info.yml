@@ -1,5 +1,5 @@
 name: CKEditor Accordion - Detail Plugin
 type: module
 description: Adds an accordion toolbar button - using the detail plugin.
-core_version_requirement: ^9.3 || ^10
+core_version_requirement: ^9.3 || ^10 || ^11
 package: CKEditor
