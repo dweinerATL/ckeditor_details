@@ -21,7 +21,7 @@ Each filter format will now have a config tab for this plugin.
 
 Dependencies
 ============
-This module requires the core CKEditor module.
+This module requires the core CKEditor5 module.
 
 Uninstallation
 ==============
