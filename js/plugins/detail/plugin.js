@@ -22,7 +22,7 @@
    * Plugin
    */
   CKEDITOR.plugins.add('detail', {
-      requires: 'widget',
+      requires: 'widget,dialog',
       icons: 'detail',
       hidpi: true,
       lang: 'de,en,uk,ru',
@@ -46,7 +46,9 @@
                   }
               },
               allowedContent: {
-                details: true,
+                details: {
+                  attributes: 'name'
+                },
                 summary: true,
                 div: {
                   attributes: '!class',
@@ -108,9 +110,75 @@
                   });
               }
           });
+          // Command to open the name dialog.
+          editor.addCommand('detailName', new CKEDITOR.dialogCommand('detailName'));
+
+          // Register the dialog for setting optional name attribute.
+          CKEDITOR.dialog.add('detailName', function (editor) {
+            return {
+              title: Drupal.t('Details properties'),
+              minWidth: 300,
+              minHeight: 60,
+              contents: [
+                {
+                  id: 'info',
+                  elements: [
+                    {
+                      type: 'text',
+                      id: 'name',
+                      label: Drupal.t('Name (optional)'),
+                      setup: function () {},
+                    }
+                  ]
+                }
+              ],
+              onShow: function () {
+                // Prefill when inside existing <details>.
+                var sel = editor.getSelection();
+                var startEl = sel && sel.getStartElement ? sel.getStartElement() : null;
+                var detailsEl = startEl ? startEl.getAscendant('details', true) : null;
+                var current = detailsEl ? (detailsEl.getAttribute('name') || '') : '';
+                this.setValueOf('info', 'name', current);
+              },
+              onOk: function () {
+                var value = String(this.getValueOf('info', 'name') || '').trim();
+                var sel = editor.getSelection();
+                var startEl = sel && sel.getStartElement ? sel.getStartElement() : null;
+                var detailsEl = startEl ? startEl.getAscendant('details', true) : null;
+
+                if (detailsEl) {
+                  // Edit existing.
+                  if (value === '') {
+                    detailsEl.removeAttribute('name');
+                  } else {
+                    detailsEl.setAttribute('name', value);
+                  }
+                } else {
+                  // Insert new, then apply attribute if provided.
+                  editor.execCommand('detail');
+                  // After inserting, try to get the newly inserted widget element.
+                  sel = editor.getSelection();
+                  var selected = sel ? sel.getSelectedElement() : null;
+                  if (!selected) {
+                    startEl = sel && sel.getStartElement ? sel.getStartElement() : null;
+                    selected = startEl ? startEl.getAscendant('details', true) : null;
+                  }
+                  if (selected && selected.getName && selected.getName() === 'details') {
+                    if (value === '') {
+                      selected.removeAttribute('name');
+                    } else {
+                      selected.setAttribute('name', value);
+                    }
+                  }
+                }
+              }
+            };
+          });
+
+          // Replace toolbar button to open dialog (insert/edit properties).
           editor.ui.addButton('detail', {
             label: Drupal.t('Add details'),
-            command: 'detail',
+            command: 'detailName',
             toolbar: 'insert',
           });
       },

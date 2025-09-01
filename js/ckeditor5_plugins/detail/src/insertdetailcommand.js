@@ -7,13 +7,13 @@
 import { Command } from 'ckeditor5/src/core';
 
 export default class InsertDetailCommand extends Command {
-  execute() {
+  execute(options = {}) {
     const { model } = this.editor;
 
     model.change((writer) => {
       // Insert <detail>*</detail> at the current selection position
       // in a way that will result in creating a valid model structure.
-      model.insertContent(createDetail(writer, this.editor));
+      model.insertContent(createDetail(writer, this.editor, options));
     });
   }
 
@@ -35,10 +35,14 @@ export default class InsertDetailCommand extends Command {
   }
 }
 
-function createDetail(writer, editor) {
+function createDetail(writer, editor, options = {}) {
   // Create instances of the three elements registered with the editor in
   // detailediting.js.
-  const detail = writer.createElement('detail');
+  const attrs = {};
+  if (options.name && String(options.name).trim() !== '') {
+    attrs.name = String(options.name).trim();
+  }
+  const detail = writer.createElement('detail', attrs);
   const detailSummary = writer.createElement('detailSummary');
   const detailWrapper = writer.createElement('detailWrapper');
 
