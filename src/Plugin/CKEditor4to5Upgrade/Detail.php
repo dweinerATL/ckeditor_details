@@ -10,6 +10,8 @@ use Drupal\ckeditor5\Plugin\CKEditor4To5UpgradePluginInterface;
 use Drupal\filter\FilterFormatInterface;
 
 /**
+ * Plugin for migrating `details` elements from CKEditor 4 to 5.
+ *
  * @CKEditor4To5Upgrade(
  *   id = "ckeditor_details",
  *   cke4_buttons = {
@@ -29,6 +31,7 @@ class Detail extends PluginBase implements CKEditor4To5UpgradePluginInterface {
   /**
    * {@inheritdoc}
    */
+  // phpcs:ignore Drupal.NamingConventions.ValidFunctionName
   public function mapCKEditor4ToolbarButtonToCKEditor5ToolbarItem(string $cke4_button, HTMLRestrictions $text_format_html_restrictions): ?array {
     switch ($cke4_button) {
       case 'detail':
@@ -42,6 +45,7 @@ class Detail extends PluginBase implements CKEditor4To5UpgradePluginInterface {
   /**
    * {@inheritdoc}
    */
+  // phpcs:ignore Drupal.NamingConventions.ValidFunctionName
   public function mapCKEditor4SettingsToCKEditor5Configuration(string $cke4_plugin_id, array $cke4_plugin_settings): ?array {
     throw new \OutOfBoundsException();
   }
@@ -49,6 +53,7 @@ class Detail extends PluginBase implements CKEditor4To5UpgradePluginInterface {
   /**
    * {@inheritdoc}
    */
+  // phpcs:ignore Drupal.NamingConventions.ValidFunctionName
   public function computeCKEditor5PluginSubsetConfiguration(string $cke5_plugin_id, FilterFormatInterface $text_format): ?array {
     throw new \OutOfBoundsException();
   }

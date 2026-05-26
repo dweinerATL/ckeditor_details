@@ -18,7 +18,7 @@ use Drupal\editor\Entity\Editor;
 class DetailPlugin extends PluginBase implements CKEditorPluginInterface, CKEditorPluginButtonsInterface {
 
   /**
-   * Implements \Drupal\ckeditor\Plugin\CKEditorPluginInterface::getDependencies().
+   * {@inheritdoc}
    */
   public function getDependencies(Editor $editor) {
     return [];
@@ -32,7 +32,7 @@ class DetailPlugin extends PluginBase implements CKEditorPluginInterface, CKEdit
   }
 
   /**
-   * Implements \Drupal\ckeditor\Plugin\CKEditorPluginInterface::isInternal().
+   * {@inheritdoc}
    */
   public function isInternal() {
     return FALSE;
