@@ -1,9 +1,9 @@
 details {
-  line-height: 1.5rem;
   padding: 0.75rem;
-  background: #eee;
   border: 0.0625rem solid #ddd;
   border-radius: 0.5rem;
+  background: #eee;
+  line-height: 1.5rem;
 }
 
 details > * {
