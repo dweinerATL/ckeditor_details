@@ -5,6 +5,7 @@ namespace Drupal\ckeditor_details\Plugin\CKEditorPlugin;
 use Drupal\ckeditor\CKEditorPluginInterface;
 use Drupal\ckeditor\CKEditorPluginButtonsInterface;
 use Drupal\Component\Plugin\PluginBase;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\editor\Entity\Editor;
 
 /**
@@ -16,6 +17,8 @@ use Drupal\editor\Entity\Editor;
  * )
  */
 class DetailPlugin extends PluginBase implements CKEditorPluginInterface, CKEditorPluginButtonsInterface {
+
+  use StringTranslationTrait;
 
   /**
    * {@inheritdoc}
