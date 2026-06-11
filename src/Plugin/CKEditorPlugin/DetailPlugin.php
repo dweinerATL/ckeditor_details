@@ -52,7 +52,7 @@ class DetailPlugin extends PluginBase implements CKEditorPluginInterface, CKEdit
     // @todo switch to dependency injection.
     return [
       'detail' => [
-        'label' => t('Add accordion'),
+        'label' => $this->t('Add accordion'),
         'image' => \Drupal::service('extension.list.module')->getPath('ckeditor_details') . '/js/plugins/detail/icons/detail.png',
       ],
     ];
