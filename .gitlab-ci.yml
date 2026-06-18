@@ -31,4 +31,4 @@ variables:
   OPT_IN_TEST_PREVIOUS_MAJOR: 1
   OPT_IN_TEST_PREVIOUS_MINOR: 1
 #   _CURL_TEMPLATES_REF: 'main'
-  _CSPELL_WORDS: 'akilli, ayhan, clutz, echdina, hidpi, inserttext, mandclu, maxlen, Детали, Деталі'
+  _CSPELL_WORDS: 'akilli, ayhan, clutz, echdina, hidpi, inserttext, mandclu, maxlen, zwsp, Детали, Деталі'
