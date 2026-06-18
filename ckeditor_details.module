@@ -9,14 +9,6 @@ use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
 
 /**
- * Implements hook_page_attachments().
- */
-function ckeditor_details_page_attachments(array &$page) {
-  // Add the shim to support details in older IE and pre-Chromium Edge browsers.
-  $page['#attached']['library'][] = 'core/drupal.collapse';
-}
-
-/**
  * Implements hook_help().
  */
 function ckeditor_details_help(string $route_name, RouteMatchInterface $route_match) : ?string {
