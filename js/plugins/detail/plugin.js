@@ -39,6 +39,7 @@
                       allowedContent: 'abbr br strong em small span strong sub sup time;'
                         + 'drupal-media[data-entity-type,data-entity-uuid,data-align];'
                         + 'img[!src,alt,width,height,data-entity-type,data-entity-uuid,data-align,data-caption];'
+                        + 'iframe[longdesc,name,scrolling,src,title,align,height,frameborder,width];'
                         + 'picture svg video'
                   },
                   content: {
