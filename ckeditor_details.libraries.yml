@@ -2,9 +2,6 @@
 # cSpell:ignore detail
 
 detail:
-  css:
-    theme:
-      css/detail.editor.css: { }
   js:
     js/build/detail.js: { preprocess: false, minified: true }
   dependencies:
