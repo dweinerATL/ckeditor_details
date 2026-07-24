@@ -10,9 +10,9 @@
 
 // The contents of DetailUI and Detail editing could be included in this
 // file, but it is recommended to separate these concerns in different files.
+import { Plugin } from 'ckeditor5/src/core';
 import DetailEditing from './detailediting';
 import DetailUI from './detailui';
-import { Plugin } from 'ckeditor5/src/core';
 
 export default class Detail extends Plugin {
   // Note that DetailEditing and DetailUI also extend `Plugin`, but these

@@ -1,6 +1,5 @@
 import { Plugin } from 'ckeditor5/src/core';
-import { toWidget, toWidgetEditable } from 'ckeditor5/src/widget';
-import { Widget } from 'ckeditor5/src/widget';
+import { toWidget, toWidgetEditable, Widget } from 'ckeditor5/src/widget';
 import InsertDetailCommand from './insertdetailcommand';
 
 // cSpell:ignore detail insertdetailcommand
@@ -203,20 +202,24 @@ export default class DetailEditing extends Plugin {
       const isSummary = target.tagName.toLowerCase() === 'summary';
 
       if (isSummary) {
-        if (target.innerHTML == '<br data-cke-filler="true">') {
+        if (target.innerHTML === '<br data-cke-filler="true">') {
           return;
         }
 
         // Check if summary text has any zero-width space characters.
         // If so, delete all occurrences.
-        const zwsp_unicode = '\u200B';
-        if (target.innerHTML.includes(zwsp_unicode)) {
-          const markup = target.innerHTML.replace(new RegExp(zwsp_unicode, 'g'), '');
+        const zwspUnicode = '\u200B';
+        if (target.innerHTML.includes(zwspUnicode)) {
+          const markup = target.innerHTML.replace(
+            new RegExp(zwspUnicode, 'g'),
+            '',
+          );
           const viewFragment = editor.data.processor.toView(markup);
           const modelFragment = editor.data.toModel(viewFragment);
 
           const currentSelection = editor.model.document.selection;
-          const scopeElement = editor.model.schema.getLimitElement(currentSelection);
+          const scopeElement =
+            editor.model.schema.getLimitElement(currentSelection);
           const selection = editor.model.createSelection(scopeElement, 'in');
 
           editor.model.insertContent(modelFragment, selection);
@@ -226,7 +229,10 @@ export default class DetailEditing extends Plugin {
 
     this.listenTo(viewDocument, 'keydown', (evt, data) => {
       const isSummary = data.domTarget.tagName.toLowerCase() === 'summary';
-      const isSpace = data.domEvent.key === ' ' || data.domEvent.code === 'Space' || data.domEvent.keyCode === 32;
+      const isSpace =
+        data.domEvent.key === ' ' ||
+        data.domEvent.code === 'Space' ||
+        data.domEvent.keyCode === 32;
 
       if (isSummary && isSpace) {
         // Direct insertion of a space as HTML will be ignored at the end of the summary.

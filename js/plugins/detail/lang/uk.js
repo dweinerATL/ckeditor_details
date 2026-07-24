@@ -1,7 +1,6 @@
-'use strict';
-
+/* global CKEDITOR */
 (function (CKEDITOR) {
-    CKEDITOR.plugins.setLang('detail', 'uk', {
-        title: 'Деталі'
-    });
+  CKEDITOR.plugins.setLang('detail', 'uk', {
+    title: 'Деталі',
+  });
 })(CKEDITOR);
