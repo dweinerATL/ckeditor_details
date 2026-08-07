@@ -93,34 +93,42 @@ export default class DetailEditing extends Plugin {
     // If <details> is present in the existing markup
     // processed by CKEditor, then CKEditor recognizes and loads it as a
     // <detail> model.
-    conversion.for('upcast').elementToElement({
-      model: 'detail',
-      view: {
-        name: 'details',
-      },
-    });
+    conversion.for('upcast').add((dispatcher) => {
+      dispatcher.on('element:details', (evt, data, conversionApi) => {
+        const { consumable, writer, safeInsert, convertItem } = conversionApi;
+        const viewDetails = data.viewItem;
 
-    // If <summary> is present in the existing markup
-    // processed by CKEditor, then CKEditor recognizes and loads it as a
-    // <detailSummary> model, provided it is a child element of <detail>,
-    // as required by the schema.
-    conversion.for('upcast').elementToElement({
-      model: 'detailSummary',
-      view: {
-        name: 'summary',
-      },
-    });
+        if (!consumable.consume(viewDetails, { name: true })) {
+          return;
+        }
 
-    // If <div class="details-wrapper"> is present in the existing markup
-    // processed by CKEditor, then CKEditor recognizes and loads it as a
-    // <detailWrapper> model, provided it is a child element of
-    // <detail>, as required by the schema.
-    conversion.for('upcast').elementToElement({
-      model: 'detailWrapper',
-      view: {
-        name: 'div',
-        classes: 'details-wrapper',
-      },
+        const modelDetail = writer.createElement('detail');
+        const summaryModel = writer.createElement('detailSummary');
+        const wrapperModel = writer.createElement('detailWrapper');
+
+        if (!safeInsert(modelDetail, data.modelCursor)) {
+          return;
+        }
+
+        writer.append(summaryModel, modelDetail);
+        writer.append(wrapperModel, modelDetail);
+
+        // Process each child of <details> in order.
+        viewDetails.getChildren().forEach((child) => {
+          const targetModel = child.is('element', 'summary')
+            ? summaryModel
+            : wrapperModel;
+
+          convertItem(child, writer.createPositionAt(targetModel, 'end'));
+        });
+
+        data.modelRange = writer.createRange(
+          writer.createPositionBefore(modelDetail),
+          writer.createPositionAfter(modelDetail),
+        );
+
+        data.modelCursor = data.modelRange.end;
+      });
     });
 
     // Data Downcast Converters: converts stored model data into HTML.
@@ -130,8 +138,42 @@ export default class DetailEditing extends Plugin {
     // <details>{{inner content}}</details>.
     conversion.for('dataDowncast').elementToElement({
       model: 'detail',
-      view: {
-        name: 'details',
+      view: (modelElement, { writer }) => {
+        const detailsView = writer.createContainerElement('details');
+
+        // Append <summary> first.
+        const summary = modelElement.getChild('detailSummary');
+        if (summary) {
+          const summaryView = writer.createContainerElement('summary');
+          summary.getChildren().forEach((child) => {
+            writer.insert(
+              writer.createPositionAt(summaryView, 'end'),
+              writer.createText(child.data),
+            );
+          });
+          writer.insert(
+            writer.createPositionAt(detailsView, 'end'),
+            summaryView,
+          );
+        }
+
+        // Append all children from <detailWrapper>.
+        const wrapper = modelElement.getChild('detailWrapper');
+        if (wrapper) {
+          wrapper.getChildren().forEach((child) => {
+            const childView = writer.createContainerElement(
+              child.name, // Use the child's tag name.
+              null, // No extra attributes.
+              child.getChildren(), // Pass child nodes to preserve structure.
+            );
+            writer.insert(
+              writer.createPositionAt(detailsView, 'end'),
+              childView,
+            );
+          });
+        }
+
+        return detailsView;
       },
     });
 
@@ -145,12 +187,11 @@ export default class DetailEditing extends Plugin {
     });
 
     // Instances of <detailWrapper> are saved as
-    // <div class="details-wrapper">{{inner content}}</div>.
-    conversion.for('dataDowncast').elementToElement({
+    // {{inner content}}.
+    conversion.for('dataDowncast').elementToStructure({
       model: 'detailWrapper',
-      view: {
-        name: 'div',
-        classes: 'details-wrapper',
+      view: (modelElement, { writer }) => {
+        return writer.createSlot();
       },
     });
 
@@ -169,7 +210,7 @@ export default class DetailEditing extends Plugin {
       },
     });
 
-    // Convert the <detailSummary> model into an editable <h2> widget.
+    // Convert the <detailSummary> model into an editable <summary> widget.
     conversion.for('editingDowncast').elementToElement({
       model: 'detailSummary',
       view: (modelElement, { writer: viewWriter }) => {
@@ -181,11 +222,22 @@ export default class DetailEditing extends Plugin {
     // Convert the <detailWrapper> model into an editable <div> widget.
     conversion.for('editingDowncast').elementToElement({
       model: 'detailWrapper',
-      view: (modelElement, { writer: viewWriter }) => {
-        const div = viewWriter.createEditableElement('div', {
+      view: (modelElement, { writer }) => {
+        const wrapperView = writer.createEditableElement('div', {
           class: 'details-wrapper',
         });
-        return toWidgetEditable(div, viewWriter);
+
+        // Append children in their original order.
+        modelElement.getChildren().forEach((child) => {
+          const childView = writer.createEditableElement(
+            child.name,
+            null, // No extra attributes.
+            child.getChildren(),
+          );
+          writer.insert(writer.createPositionAt(wrapperView, 'end'), childView);
+        });
+
+        return toWidgetEditable(wrapperView, writer);
       },
     });
   }

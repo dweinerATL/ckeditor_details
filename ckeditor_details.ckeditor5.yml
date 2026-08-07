@@ -27,13 +27,8 @@ ckeditor_details_detail:
     # If the plugin does not provide elements, set this as
     # `elements: false`
     elements:
-      # Note that it necessary for elements to separately provide both the tag
-      # (f.e. `<div>`) and the attribute being added to the tag
-      # (f.e. `<div class="details-wrapper">`).
       - <details>
       - <summary>
-      - <div>
-      - <div class="details-wrapper">
     # *Additional configuration properties*
     # conditions: for setting additional criteria that must be met for the
     #   plugin to be active.
