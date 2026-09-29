@@ -1,6 +1,4 @@
-# CKEditor Accordions - Detail Plugin
-
-## Description
+# CKEditor Accordion - Detail Plugin
 
 Accordions are a popular way to structure content. In the past nested divs or
 definition lists were augmented by JavaScript to provide this functionality,
@@ -13,30 +11,28 @@ For a full description of the module, visit the
 Submit bug reports and feature suggestions, or track changes in the
 [issue queue](https://www.drupal.org/project/issues/ckeditor_details).
 
-## Usage
+
+## Requirements
+
+This module requires no modules outside of Drupal core.
+
+
+## Installation
+
+Install as you would normally install a contributed Drupal module. For further information, see [Installing Drupal Modules](https://www.drupal.org/docs/extending-drupal/installing-modules).
+
+
+## Configuration
 
 Go to the Text formats and editors settings (/admin/config/content/formats) and
 add the Details button to any CKEditor-enabled text format you want.
 
-## Installation
-
-1. Download the plugin from [ckeditor](http://ckeditor.com/addon/detail)
-2. Place the plugin in the root libraries folder (/libraries).
-3. Enable CKEditor Accordions - Detail Plugin module in the Drupal admin.
-
-Each filter format will now have a config tab for this plugin.
-
-## Dependencies
-
-This module requires the core CKEditor module.
-
-## Uninstallation
-
-1. Uninstall the module from `'Administer >> Modules'`.
 
 ## Maintainers
 
-Martin Anderson-Clutz - [mandclu](https://www.drupal.org/u/mandclu)
+- Martin Anderson-Clutz - [mandclu](https://www.drupal.org/u/mandclu)
+- Liam Morland - [liam morland](https://www.drupal.org/u/liam-morland)
+
 
 ## Credits
 
