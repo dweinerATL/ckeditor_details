@@ -1,0 +1,12 @@
+{
+  "name": "dweineratl/ckeditor_details",
+  "description": "Adds an accordion toolbar button using the detail plugin.",
+  "type": "drupal-module",
+  "license": "GPL-2.0-or-later",
+  "require": {
+    "drupal/core": "^9.3 || ^10 || ^11"
+  },
+  "replace": {
+    "drupal/ckeditor_details": "self.version"
+  }
+}
