@@ -45,7 +45,6 @@ export default class DetailUI extends Plugin {
     const viewDocument = editor.editing.view.document;
     let activeDetail = null;
     let isFormOpen = false;
-    let closeOnBlur = null;
 
     saveButton.set({ label: Drupal.t('Save'), withText: true, class: 'ck-button-save' });
     cancelButton.set({ label: Drupal.t('Cancel'), withText: true, class: 'ck-button-cancel' });
@@ -71,6 +70,20 @@ export default class DetailUI extends Plugin {
             'aria-label': Drupal.t('Name (optional)'),
           },
         },
+        {
+          tag: 'label',
+          attributes: { class: 'ck-details-open-label' },
+          children: [
+            {
+              tag: 'input',
+              attributes: {
+                type: 'checkbox',
+                class: 'ck-details-open-input',
+              },
+            },
+            Drupal.t('Open by default'),
+          ],
+        },
         saveButton,
         cancelButton,
       ],
@@ -78,21 +91,19 @@ export default class DetailUI extends Plugin {
 
     formView.render();
     const inputEl = formView.element.querySelector('input.ck-details-name-input');
+    const openInputEl = formView.element.querySelector('input.ck-details-open-input');
 
     const closeForm = () => {
       if (isFormOpen) {
         isFormOpen = false;
         balloon.remove(formView);
-        activeDetail = null;
       }
-      if (closeOnBlur) {
-        viewDocument.off('blur', closeOnBlur);
-        closeOnBlur = null;
-      }
+      activeDetail = null;
     };
 
     const applyValue = () => {
       const trimmed = inputEl ? String(inputEl.value).trim() : '';
+      const isOpen = openInputEl ? openInputEl.checked : false;
 
       if (activeDetail) {
         editor.model.change((writer) => {
@@ -101,12 +112,41 @@ export default class DetailUI extends Plugin {
           } else {
             writer.setAttribute('name', trimmed, activeDetail);
           }
+          if (isOpen) {
+            writer.setAttribute('open', true, activeDetail);
+          } else {
+            writer.removeAttribute('open', activeDetail);
+          }
         });
       } else {
-        editor.execute('insertDetail', { name: trimmed });
+        editor.execute('insertDetail', { name: trimmed, open: isOpen });
       }
       closeForm();
       editor.editing.view.focus();
+    };
+
+    const openForm = (detailElement, target) => {
+      if (editor.isReadOnly) {
+        return;
+      }
+
+      closeForm();
+      activeDetail = detailElement;
+      if (inputEl) {
+        inputEl.value = activeDetail ? String(activeDetail.getAttribute('name') || '') : '';
+      }
+      if (openInputEl) {
+        openInputEl.checked = Boolean(activeDetail && activeDetail.getAttribute('open'));
+      }
+      balloon.add({
+        view: formView,
+        position: { target },
+      });
+      isFormOpen = true;
+      if (inputEl) {
+        inputEl.focus();
+        inputEl.select();
+      }
     };
 
     this.listenTo(saveButton, 'execute', (evt) => {
@@ -133,6 +173,39 @@ export default class DetailUI extends Plugin {
         applyValue();
       }
     });
+
+    this.listenTo(viewDocument, 'mousedown', (evt, data) => {
+      const selectedView = data.target;
+      if (!selectedView) {
+        return;
+      }
+
+      let detailsView = selectedView;
+      let isInsideEditable = false;
+
+      while (detailsView && !detailsView.is('element', 'details')) {
+        if (detailsView.is('editableElement')) {
+          isInsideEditable = true;
+        }
+        detailsView = detailsView.parent;
+      }
+
+      if (!detailsView || isInsideEditable) {
+        if (isFormOpen) {
+          closeForm();
+        }
+        return;
+      }
+
+      const detailElement = editor.editing.mapper.toModelElement(detailsView);
+      if (detailElement && detailElement.is('element', 'detail')) {
+        const target = editor.editing.view.domConverter.mapViewToDom(detailsView);
+        if (target) {
+          openForm(detailElement, target);
+        }
+      }
+    }, { priority: 'lowest' });
+
     editor.ui.componentFactory.add('detail', (locale) => {
       const buttonView = new ButtonView(locale);
 
@@ -145,24 +218,7 @@ export default class DetailUI extends Plugin {
       buttonView.bind('isEnabled').to(command, 'isEnabled');
 
       this.listenTo(buttonView, 'execute', () => {
-        closeForm();
-        activeDetail = getSelectedDetail(editor.model.document.selection);
-        if (inputEl) {
-          inputEl.value = activeDetail ? String(activeDetail.getAttribute('name') || '') : '';
-        }
-
-        balloon.add({
-          view: formView,
-          position: { target: buttonView.element },
-        });
-        isFormOpen = true;
-
-        if (inputEl) {
-          inputEl.focus();
-          inputEl.select();
-        }
-        closeOnBlur = () => closeForm();
-        viewDocument.on('blur', closeOnBlur);
+        openForm(getSelectedDetail(editor.model.document.selection), buttonView.element);
       });
 
       return buttonView;

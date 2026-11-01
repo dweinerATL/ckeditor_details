@@ -42,6 +42,9 @@ function createDetail(writer, editor, options = {}) {
   if (options.name && String(options.name).trim() !== '') {
     attrs.name = String(options.name).trim();
   }
+  if (options.open) {
+    attrs.open = true;
+  }
   const detail = writer.createElement('detail', attrs);
   const detailSummary = writer.createElement('detailSummary');
   const detailWrapper = writer.createElement('detailWrapper');
