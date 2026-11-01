@@ -1,21 +1,21 @@
-details {
-  line-height: 1.5rem;
+.ck-content details {
   padding: 0.75rem;
-  background: #eee;
   border: 0.0625rem solid #ddd;
   border-radius: 0.5rem;
+  background: #eee;
+  line-height: 1.5rem;
 }
 
-details > * {
+.ck-content details > * {
   padding: 0.375rem;
   background: #fff;
 }
 
-details[open] > :not(:last-child) {
+.ck-content details[open] > :not(:last-child) {
   margin-bottom: 0.75rem;
 }
 
-details .cke_widget_editable {
+.ck-content details .cke_widget_editable {
   outline: none !important;
 }
 

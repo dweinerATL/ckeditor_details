@@ -5,6 +5,7 @@ namespace Drupal\ckeditor_details\Plugin\CKEditorPlugin;
 use Drupal\ckeditor\CKEditorPluginInterface;
 use Drupal\ckeditor\CKEditorPluginButtonsInterface;
 use Drupal\Component\Plugin\PluginBase;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\editor\Entity\Editor;
 
 /**
@@ -17,8 +18,10 @@ use Drupal\editor\Entity\Editor;
  */
 class DetailPlugin extends PluginBase implements CKEditorPluginInterface, CKEditorPluginButtonsInterface {
 
+  use StringTranslationTrait;
+
   /**
-   * Implements \Drupal\ckeditor\Plugin\CKEditorPluginInterface::getDependencies().
+   * {@inheritdoc}
    */
   public function getDependencies(Editor $editor) {
     return [];
@@ -32,7 +35,7 @@ class DetailPlugin extends PluginBase implements CKEditorPluginInterface, CKEdit
   }
 
   /**
-   * Implements \Drupal\ckeditor\Plugin\CKEditorPluginInterface::isInternal().
+   * {@inheritdoc}
    */
   public function isInternal() {
     return FALSE;
@@ -52,7 +55,7 @@ class DetailPlugin extends PluginBase implements CKEditorPluginInterface, CKEdit
     // @todo switch to dependency injection.
     return [
       'detail' => [
-        'label' => t('Add accordion'),
+        'label' => $this->t('Add accordion'),
         'image' => \Drupal::service('extension.list.module')->getPath('ckeditor_details') . '/js/plugins/detail/icons/detail.png',
       ],
     ];

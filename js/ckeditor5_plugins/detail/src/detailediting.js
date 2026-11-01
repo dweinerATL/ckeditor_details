@@ -225,16 +225,21 @@ export default class DetailEditing extends Plugin {
         if (target.innerHTML == '<br data-cke-filler="true">') {
           return;
         }
-        // Delete any zero-width spaces.
-        const markup = target.innerHTML.replace(/\u200B/gi, '');
-        const viewFragment = editor.data.processor.toView(markup);
-        const modelFragment = editor.data.toModel(viewFragment);
 
-        const currentSelection = editor.model.document.selection;
-        const scopeElement = editor.model.schema.getLimitElement(currentSelection);
-        const selection = editor.model.createSelection(scopeElement, 'in');
+        // Check if summary text has any zero-width space characters.
+        // If so, delete all occurrences.
+        const zwsp_unicode = '\u200B';
+        if (target.innerHTML.includes(zwsp_unicode)) {
+          const markup = target.innerHTML.replace(new RegExp(zwsp_unicode, 'g'), '');
+          const viewFragment = editor.data.processor.toView(markup);
+          const modelFragment = editor.data.toModel(viewFragment);
 
-        editor.model.insertContent(modelFragment, selection);
+          const currentSelection = editor.model.document.selection;
+          const scopeElement = editor.model.schema.getLimitElement(currentSelection);
+          const selection = editor.model.createSelection(scopeElement, 'in');
+
+          editor.model.insertContent(modelFragment, selection);
+        }
       }
     });
 
