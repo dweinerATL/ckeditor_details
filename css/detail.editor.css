@@ -18,3 +18,25 @@
 .ck-content details .cke_widget_editable {
   outline: none !important;
 }
+
+/* CKEditor 5 Details plugin inline form styling */
+/* Increase specificity and use !important to override ck-reset_all defaults */
+.ck.ck-reset_all.ck-details-name-form,
+.ck-details-name-form {
+  padding-left: 0.5rem !important; /* Requested left padding */
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem; /* Modern spacing between items */
+  background: #fff; /* Make the bubble content stand out */
+  border: 1px solid #000; /* Requested border */
+  border-radius: 4px; /* small rounding for aesthetics (optional) */
+}
+
+.ck-details-name-label {
+  margin-right: 0.5rem !important; /* Space between label and input (fallback if gap not supported) */
+}
+
+/* Input padding for better text readability */
+.ck-details-name-input {
+  padding-left: 0.5rem !important;
+}

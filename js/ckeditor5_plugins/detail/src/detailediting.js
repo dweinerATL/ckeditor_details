@@ -59,6 +59,8 @@ export default class DetailEditing extends Plugin {
       isObject: true,
       // Allow in places where other blocks are allowed (e.g. directly in the root).
       allowWhere: '$block',
+      // Allow optional HTML attributes on the <details> element.
+      allowAttributes: ['name'],
     });
 
     schema.register('detailSummary', {
@@ -95,7 +97,14 @@ export default class DetailEditing extends Plugin {
     // processed by CKEditor, then CKEditor recognizes and loads it as a
     // <detail> model.
     conversion.for('upcast').elementToElement({
-      model: 'detail',
+      model: (viewElement, { writer }) => {
+        const attrs = {};
+        const nameAttr = viewElement.getAttribute('name');
+        if (nameAttr) {
+          attrs.name = nameAttr;
+        }
+        return writer.createElement('detail', attrs);
+      },
       view: {
         name: 'details',
       },
@@ -131,8 +140,13 @@ export default class DetailEditing extends Plugin {
     // <details>{{inner content}}</details>.
     conversion.for('dataDowncast').elementToElement({
       model: 'detail',
-      view: {
-        name: 'details',
+      view: (modelElement, { writer: viewWriter }) => {
+        const attrs = {};
+        const nameAttr = modelElement.getAttribute('name');
+        if (nameAttr) {
+          attrs.name = nameAttr;
+        }
+        return viewWriter.createContainerElement('details', attrs);
       },
     });
 
@@ -162,9 +176,17 @@ export default class DetailEditing extends Plugin {
     //
     // Convert the <detail> model into a container widget in the editor UI.
     conversion.for('editingDowncast').elementToElement({
-      model: 'detail',
+      model: {
+        name: 'detail',
+        attributes: ['name'],
+      },
       view: (modelElement, { writer: viewWriter }) => {
-        const details = viewWriter.createContainerElement('details');
+        const attrs = {};
+        const nameAttr = modelElement.getAttribute('name');
+        if (nameAttr) {
+          attrs.name = nameAttr;
+        }
+        const details = viewWriter.createContainerElement('details', attrs);
 
         return toWidget(details, viewWriter, { label: 'detail widget' });
       },
