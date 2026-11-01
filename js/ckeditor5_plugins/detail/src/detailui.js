@@ -32,6 +32,13 @@ export default class DetailUI extends Plugin {
     return [ContextualBalloon];
   }
 
+  destroy() {
+    if (this._removeOutsideInteractionListeners) {
+      this._removeOutsideInteractionListeners();
+    }
+    super.destroy();
+  }
+
   init() {
     const editor = this.editor;
     const balloon = editor.plugins.get('ContextualBalloon');
@@ -98,13 +105,17 @@ export default class DetailUI extends Plugin {
         closeForm();
       }
     };
+    const removeOutsideInteractionListeners = () => {
+      ownerDocument.removeEventListener('mousedown', closeOnOutsideInteraction, true);
+      ownerDocument.removeEventListener('focusin', closeOnOutsideInteraction);
+    };
+    this._removeOutsideInteractionListeners = removeOutsideInteractionListeners;
 
     const closeForm = () => {
       if (isFormOpen) {
         isFormOpen = false;
         balloon.remove(formView);
-        ownerDocument.removeEventListener('mousedown', closeOnOutsideInteraction, true);
-        ownerDocument.removeEventListener('focusin', closeOnOutsideInteraction);
+        removeOutsideInteractionListeners();
       }
       activeDetail = null;
     };
