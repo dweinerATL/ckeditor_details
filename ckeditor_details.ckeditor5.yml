@@ -32,6 +32,7 @@ ckeditor_details_detail:
       # (f.e. `<div class="details-wrapper">`).
       - <details>
       - <details name>
+      - <details open>
       - <summary>
       - <div>
       - <div class="details-wrapper">

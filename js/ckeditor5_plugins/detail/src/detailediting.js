@@ -60,7 +60,7 @@ export default class DetailEditing extends Plugin {
       // Allow in places where other blocks are allowed (e.g. directly in the root).
       allowWhere: '$block',
       // Allow optional HTML attributes on the <details> element.
-      allowAttributes: ['name'],
+      allowAttributes: ['name', 'open'],
     });
 
     schema.register('detailSummary', {
@@ -103,6 +103,9 @@ export default class DetailEditing extends Plugin {
         if (nameAttr) {
           attrs.name = nameAttr;
         }
+        if (viewElement.hasAttribute('open')) {
+          attrs.open = true;
+        }
         return writer.createElement('detail', attrs);
       },
       view: {
@@ -140,14 +143,17 @@ export default class DetailEditing extends Plugin {
     // <details>{{inner content}}</details>.
     conversion.for('dataDowncast').elementToElement({
       model: 'detail',
-      view: (modelElement, { writer: viewWriter }) => {
-        const attrs = {};
-        const nameAttr = modelElement.getAttribute('name');
-        if (nameAttr) {
-          attrs.name = nameAttr;
-        }
-        return viewWriter.createContainerElement('details', attrs);
+      view: {
+        name: 'details',
       },
+    });
+    conversion.for('dataDowncast').attributeToAttribute({
+      model: { name: 'detail', key: 'name' },
+      view: 'name',
+    });
+    conversion.for('dataDowncast').attributeToAttribute({
+      model: { name: 'detail', key: 'open' },
+      view: { key: 'open', value: '' },
     });
 
     // Instances of <detailSummary> are saved as
@@ -178,13 +184,16 @@ export default class DetailEditing extends Plugin {
     conversion.for('editingDowncast').elementToElement({
       model: {
         name: 'detail',
-        attributes: ['name'],
+        attributes: ['name', 'open'],
       },
       view: (modelElement, { writer: viewWriter }) => {
         const attrs = {};
         const nameAttr = modelElement.getAttribute('name');
         if (nameAttr) {
           attrs.name = nameAttr;
+        }
+        if (modelElement.getAttribute('open')) {
+          attrs.open = '';
         }
         const details = viewWriter.createContainerElement('details', attrs);
 
