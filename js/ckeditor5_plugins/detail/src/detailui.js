@@ -92,11 +92,19 @@ export default class DetailUI extends Plugin {
     formView.render();
     const inputEl = formView.element.querySelector('input.ck-details-name-input');
     const openInputEl = formView.element.querySelector('input.ck-details-open-input');
+    const ownerDocument = formView.element.ownerDocument;
+    const closeOnOutsideInteraction = (event) => {
+      if (!formView.element.contains(event.target)) {
+        closeForm();
+      }
+    };
 
     const closeForm = () => {
       if (isFormOpen) {
         isFormOpen = false;
         balloon.remove(formView);
+        ownerDocument.removeEventListener('mousedown', closeOnOutsideInteraction, true);
+        ownerDocument.removeEventListener('focusin', closeOnOutsideInteraction);
       }
       activeDetail = null;
     };
@@ -143,6 +151,8 @@ export default class DetailUI extends Plugin {
         position: { target },
       });
       isFormOpen = true;
+      ownerDocument.addEventListener('mousedown', closeOnOutsideInteraction, true);
+      ownerDocument.addEventListener('focusin', closeOnOutsideInteraction);
       if (inputEl) {
         inputEl.focus();
         inputEl.select();
