@@ -176,7 +176,10 @@ export default class DetailEditing extends Plugin {
     //
     // Convert the <detail> model into a container widget in the editor UI.
     conversion.for('editingDowncast').elementToElement({
-      model: 'detail',
+      model: {
+        name: 'detail',
+        attributes: ['name'],
+      },
       view: (modelElement, { writer: viewWriter }) => {
         const attrs = {};
         const nameAttr = modelElement.getAttribute('name');
