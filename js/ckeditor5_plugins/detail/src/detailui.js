@@ -196,6 +196,14 @@ export default class DetailUI extends Plugin {
       }
     });
 
+    this.listenTo(viewDocument, 'keydown', (evt, data) => {
+      if (isFormOpen && data.keyCode === 27) {
+        data.preventDefault();
+        evt.stop();
+        closeForm();
+      }
+    }, { priority: 'high' });
+
     editor.editing.view.addObserver(ClickObserver);
     this.listenTo(viewDocument, 'click', (evt, data) => {
       const selectedView = data.target;
