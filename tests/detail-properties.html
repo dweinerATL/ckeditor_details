@@ -12,7 +12,8 @@
     if (!condition) throw new Error(message);
   };
   try {
-    const editor = new CKEditor5.core.Editor();
+    const Editor = CKEditor5.dll('./src/core.js').Editor;
+    const editor = new Editor();
     editor.model.document.createRoot();
     editor.model.schema.register('paragraph', { inheritAllFrom: '$block' });
     editor.conversion.elementToElement({ model: 'paragraph', view: 'p' });
@@ -65,17 +66,37 @@
     assert(details.getAttribute('name') === 'group' && details.hasAttribute('open'), 'Insert properties');
 
     const detail = Array.from(editor.model.document.getRoot().getChildren()).find(child => child.name === 'detail');
+    const multilineValue = 'first\r\nsecond';
     editor.model.change(writer => {
-      writer.setAttribute('dataAttributes', { ...detail.getAttribute('dataAttributes'), 'data-cke-internal': 'keep' }, detail);
+      writer.setAttribute('dataAttributes', {
+        ...detail.getAttribute('dataAttributes'),
+        'data-cke-internal': 'keep',
+        'data-multiline': multilineValue,
+      }, detail);
       writer.setSelection(detail, 'on');
     });
     open();
-    assert(form.querySelectorAll('.ck-details-data-row').length === 3, 'Existing attributes loaded');
+    assert(form.querySelectorAll('.ck-details-data-row').length === 4, 'Existing attributes loaded');
+    const multilineRow = Array.from(form.querySelectorAll('.ck-details-data-row'))
+      .find(row => row.querySelector('.ck-details-data-suffix').value === 'multiline');
+    assert(multilineRow.querySelector('.ck-details-data-value').value === 'firstsecond',
+      'Text input should sanitize line breaks');
+    save();
+    assert(detail.getAttribute('dataAttributes')['data-multiline'] === multilineValue,
+      'Unchanged multiline attribute value must be preserved');
+
+    open();
     const rows = form.querySelectorAll('.ck-details-data-row');
-    rows[0].querySelector('.ck-details-data-suffix').value = 'renamed';
-    rows[0].querySelector('select').value = 'detailWrapper';
-    rows[1].querySelector('.ck-details-data-remove').click();
-    rows[2].querySelector('.ck-details-data-value').value = 'updated';
+    const featureRow = Array.from(rows).find(row =>
+      row.querySelector('.ck-details-data-suffix').value === 'feature');
+    const titleRow = Array.from(rows).find(row =>
+      row.querySelector('.ck-details-data-suffix').value === 'title');
+    const contentRow = Array.from(rows).find(row =>
+      row.querySelector('.ck-details-data-suffix').value === 'content');
+    featureRow.querySelector('.ck-details-data-suffix').value = 'renamed';
+    featureRow.querySelector('select').value = 'detailWrapper';
+    titleRow.querySelector('.ck-details-data-remove').click();
+    contentRow.querySelector('.ck-details-data-value').value = 'updated';
     save();
     details = output();
     assert(!details.hasAttribute('data-feature'), 'Renamed/moved attribute removed from original');
@@ -83,6 +104,8 @@
     assert(details.querySelector('.details-wrapper').getAttribute('data-renamed') === 'one', 'Moved attribute saved');
     assert(details.querySelector('.details-wrapper').getAttribute('data-content') === 'updated', 'Edited attribute saved');
     assert(details.getAttribute('data-cke-internal') === 'keep', 'Reserved data attribute preserved');
+    assert(detail.getAttribute('dataAttributes')['data-multiline'] === multilineValue,
+      'Unchanged multiline attribute value must survive other edits');
 
     open();
     const prior = editor.data.get();

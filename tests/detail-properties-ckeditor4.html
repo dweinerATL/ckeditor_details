@@ -51,12 +51,22 @@
       row.querySelector('.ck-details-data-value').value = value;
       return row;
     };
+    const assertFocusableControls = dialog => {
+      const root = dialog.getElement().$;
+      const registered = new Set(dialog._.focusList.map(item => item.element.$));
+      const controls = root.querySelectorAll(
+        '.ck-details-data-attributes select, .ck-details-data-attributes input, .ck-details-data-attributes button',
+      );
+      assert(Array.from(controls).every(control => registered.has(control)),
+        'Data attribute controls must be registered with the dialog');
+    };
     let dialog = await open();
     let root = dialog.getElement().$;
     dialog.setValueOf('info', 'name', 'group');
     add(root, 'detail', 'feature', 'one');
     add(root, 'detailSummary', 'heading', '');
     add(root, 'detailWrapper', 'body', 'two');
+    assertFocusableControls(dialog);
     dialog.getButton('ok').click();
     await wait(100);
     let data = editor.getData();
@@ -67,6 +77,7 @@
     root = dialog.getElement().$;
     const rows = Array.from(root.querySelectorAll('.ck-details-data-row'));
     assert(rows.length === 3, 'Existing attributes not loaded');
+    assertFocusableControls(dialog);
     const detail = rows.find(row => row.querySelector('.ck-details-data-suffix').value === 'feature');
     const summary = rows.find(row => row.querySelector('.ck-details-data-suffix').value === 'heading');
     const wrapper = rows.find(row => row.querySelector('.ck-details-data-suffix').value === 'body');
@@ -94,8 +105,9 @@
     dialog.getButton('cancel').click();
     assert(editor.getData() === data, 'Cancel must discard changes');
 
+    const multilineValue = 'first\r\nsecond';
     await new Promise(resolve => editor.setData(
-      '<details data-imported="keep"><summary data-existing="yes">Imported</summary>' +
+      '<details data-imported="keep" data-multiline="first&#13;&#10;second"><summary data-existing="yes">Imported</summary>' +
       '<div class="details-wrapper" data-other="value"><p>Body</p></div></details>', resolve,
     ));
     const widget = Object.values(editor.widgets.instances)[0];
@@ -103,7 +115,20 @@
     widget.focus();
     dialog = await open();
     root = dialog.getElement().$;
-    assert(root.querySelectorAll('.ck-details-data-row').length === 3, 'Imported attributes not loaded');
+    assert(root.querySelectorAll('.ck-details-data-row').length === 4, 'Imported attributes not loaded');
+    const multilineRow = Array.from(root.querySelectorAll('.ck-details-data-row')).find(row =>
+      row.querySelector('.ck-details-data-suffix').value === 'multiline');
+    assert(multilineRow.querySelector('.ck-details-data-value').value === 'firstsecond',
+      'Text input should sanitize line breaks');
+    assertFocusableControls(dialog);
+    dialog.getButton('ok').click();
+    await wait(100);
+    const imported = new DOMParser().parseFromString(editor.getData(), 'text/html').querySelector('details');
+    assert(imported.getAttribute('data-multiline') === multilineValue,
+      'Unchanged multiline attribute value must be preserved');
+
+    dialog = await open();
+    root = dialog.getElement().$;
     add(root, 'detail', 'additional', 'new');
     dialog.getButton('ok').click();
     await wait(100);

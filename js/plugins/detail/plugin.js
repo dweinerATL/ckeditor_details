@@ -205,6 +205,7 @@
                 // Prefill when inside existing <details>.
                 var sel = editor.getSelection();
                 var detailsEl = getDetailsElement(sel);
+                var dialog = this;
                 this._detailsElement = detailsEl;
                 var current = detailsEl ? (detailsEl.getAttribute('name') || '') : '';
                 this.setValueOf('info', 'name', current);
@@ -212,6 +213,9 @@
                   var container = this.getContentElement('info', 'dataAttributes').getElement().$;
                   this._dataAttributes = Drupal.ckeditorDetailsDataAttributes.create(container, {
                     reservedSuffixes: ['widget'],
+                    addFocusable: function (element) {
+                      dialog.addFocusable(new CKEDITOR.dom.element(element));
+                    },
                   });
                 }
                 this._dataAttributes.setEntries(getEntries(getElements(detailsEl)));

@@ -48,6 +48,11 @@
         value.className = 'ck-details-data-value';
         value.setAttribute('aria-label', Drupal.t('Data attribute value'));
         value.placeholder = Drupal.t('Value');
+        value._originalValue = entry.value;
+        value._changed = false;
+        value.addEventListener('input', function () {
+          value._changed = true;
+        });
         remove.type = 'button';
         remove.className = 'ck-details-data-remove';
         remove.textContent = Drupal.t('Remove');
@@ -55,6 +60,7 @@
         target.value = entry.target;
         suffix.value = entry.suffix;
         value.value = entry.value;
+        value._initialValue = value.value;
         remove.addEventListener('click', function () {
           row.remove();
           error.textContent = '';
@@ -65,12 +71,20 @@
         row.appendChild(value);
         row.appendChild(remove);
         rows.appendChild(row);
+        [target, suffix, value, remove].forEach(registerFocusable);
         return suffix;
+      }
+
+      function registerFocusable(element) {
+        if (options.addFocusable) {
+          options.addFocusable(element);
+        }
       }
 
       add.addEventListener('click', function () {
         addRow({ target: 'detail', suffix: '', value: '' }).focus();
       });
+      registerFocusable(add);
 
       return {
         showError: function (message) {
@@ -125,10 +139,12 @@
               return null;
             }
             seen.add(key);
+            var valueInput = row.querySelector('.ck-details-data-value');
             entries.push({
               target: target,
               suffix: name,
-              value: row.querySelector('.ck-details-data-value').value,
+              value: !valueInput._changed && valueInput.value === valueInput._initialValue ?
+                valueInput._originalValue : valueInput.value,
             });
           }
           return entries;
