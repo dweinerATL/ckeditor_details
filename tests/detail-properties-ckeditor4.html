@@ -15,10 +15,13 @@
   async function run() {
     const url = new URLSearchParams(location.search).get('ckeditor4');
     assert(url, 'Specify ?ckeditor4=/path/to/ckeditor.js on the same server');
-    window.CKEDITOR_BASEPATH = new URL('.', new URL(url, location.href)).href;
+    const scriptUrl = new URL(url, location.href);
+    assert((scriptUrl.protocol === 'http:' || scriptUrl.protocol === 'https:') &&
+      scriptUrl.origin === location.origin, 'CKEditor 4 must be loaded from the same server');
+    window.CKEDITOR_BASEPATH = new URL('.', scriptUrl).href;
     await new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = url;
+      script.src = scriptUrl.href;
       script.onload = resolve;
       script.onerror = () => reject(new Error('Could not load CKEditor 4'));
       document.head.appendChild(script);
