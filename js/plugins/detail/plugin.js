@@ -48,11 +48,13 @@
               },
               allowedContent: {
                 details: {
-                  attributes: 'name'
+                  attributes: 'name,data-*'
                 },
-                summary: true,
+                summary: {
+                  attributes: 'data-*'
+                },
                 div: {
-                  attributes: '!class',
+                  attributes: '!class,data-*',
                   classes: 'details-wrapper'
                 }
               },

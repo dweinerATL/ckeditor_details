@@ -60,7 +60,7 @@ export default class DetailEditing extends Plugin {
       // Allow in places where other blocks are allowed (e.g. directly in the root).
       allowWhere: '$block',
       // Allow optional HTML attributes on the <details> element.
-      allowAttributes: ['name', 'open'],
+      allowAttributes: ['name', 'open', 'dataAttributes'],
     });
 
     schema.register('detailSummary', {
@@ -73,12 +73,14 @@ export default class DetailEditing extends Plugin {
       allowIn: 'detail',
       // Allow content that is allowed in blocks (e.g. text with attributes).
       allowContentOf: '$block',
+      allowAttributes: ['dataAttributes'],
     });
 
     schema.register('detailWrapper', {
       isLimit: true,
       allowIn: 'detail',
       allowContentOf: '$root',
+      allowAttributes: ['dataAttributes'],
     });
   }
 
@@ -98,7 +100,7 @@ export default class DetailEditing extends Plugin {
     // <detail> model.
     conversion.for('upcast').elementToElement({
       model: (viewElement, { writer }) => {
-        const attrs = {};
+        const attrs = getModelDataAttributes(viewElement);
         const nameAttr = viewElement.getAttribute('name');
         if (nameAttr) {
           attrs.name = nameAttr;
@@ -108,9 +110,7 @@ export default class DetailEditing extends Plugin {
         }
         return writer.createElement('detail', attrs);
       },
-      view: {
-        name: 'details',
-      },
+      view: matchElementWithDataAttributes('details'),
     });
 
     // If <summary> is present in the existing markup
@@ -118,10 +118,9 @@ export default class DetailEditing extends Plugin {
     // <detailSummary> model, provided it is a child element of <detail>,
     // as required by the schema.
     conversion.for('upcast').elementToElement({
-      model: 'detailSummary',
-      view: {
-        name: 'summary',
-      },
+      model: (viewElement, { writer }) =>
+        writer.createElement('detailSummary', getModelDataAttributes(viewElement)),
+      view: matchElementWithDataAttributes('summary'),
     });
 
     // If <div class="details-wrapper"> is present in the existing markup
@@ -129,11 +128,9 @@ export default class DetailEditing extends Plugin {
     // <detailWrapper> model, provided it is a child element of
     // <detail>, as required by the schema.
     conversion.for('upcast').elementToElement({
-      model: 'detailWrapper',
-      view: {
-        name: 'div',
-        classes: 'details-wrapper',
-      },
+      model: (viewElement, { writer }) =>
+        writer.createElement('detailWrapper', getModelDataAttributes(viewElement)),
+      view: matchElementWithDataAttributes('div', 'details-wrapper'),
     });
 
     // Data Downcast Converters: converts stored model data into HTML.
@@ -142,10 +139,9 @@ export default class DetailEditing extends Plugin {
     // Instances of <detail> are saved as
     // <details>{{inner content}}</details>.
     conversion.for('dataDowncast').elementToElement({
-      model: 'detail',
-      view: {
-        name: 'details',
-      },
+      model: { name: 'detail', attributes: ['dataAttributes'] },
+      view: (modelElement, { writer }) =>
+        writer.createContainerElement('details', getViewDataAttributes(modelElement)),
     });
     conversion.for('dataDowncast').attributeToAttribute({
       model: { name: 'detail', key: 'name' },
@@ -159,20 +155,20 @@ export default class DetailEditing extends Plugin {
     // Instances of <detailSummary> are saved as
     // <summary>{{inner content}}</summary>.
     conversion.for('dataDowncast').elementToElement({
-      model: 'detailSummary',
-      view: {
-        name: 'summary',
-      },
+      model: { name: 'detailSummary', attributes: ['dataAttributes'] },
+      view: (modelElement, { writer }) =>
+        writer.createContainerElement('summary', getViewDataAttributes(modelElement)),
     });
 
     // Instances of <detailWrapper> are saved as
     // <div class="details-wrapper">{{inner content}}</div>.
     conversion.for('dataDowncast').elementToElement({
-      model: 'detailWrapper',
-      view: {
-        name: 'div',
-        classes: 'details-wrapper',
-      },
+      model: { name: 'detailWrapper', attributes: ['dataAttributes'] },
+      view: (modelElement, { writer }) =>
+        writer.createContainerElement('div', {
+          ...getViewDataAttributes(modelElement),
+          class: 'details-wrapper',
+        }),
     });
 
     // Editing Downcast Converters. These render the content to the user for
@@ -184,10 +180,10 @@ export default class DetailEditing extends Plugin {
     conversion.for('editingDowncast').elementToElement({
       model: {
         name: 'detail',
-        attributes: ['name', 'open'],
+        attributes: ['name', 'open', 'dataAttributes'],
       },
       view: (modelElement, { writer: viewWriter }) => {
-        const attrs = {};
+        const attrs = getViewDataAttributes(modelElement);
         const nameAttr = modelElement.getAttribute('name');
         if (nameAttr) {
           attrs.name = nameAttr;
@@ -203,18 +199,19 @@ export default class DetailEditing extends Plugin {
 
     // Convert the <detailSummary> model into an editable <h2> widget.
     conversion.for('editingDowncast').elementToElement({
-      model: 'detailSummary',
+      model: { name: 'detailSummary', attributes: ['dataAttributes'] },
       view: (modelElement, { writer: viewWriter }) => {
-        const summary = viewWriter.createEditableElement('summary');
+        const summary = viewWriter.createEditableElement('summary', getViewDataAttributes(modelElement));
         return toWidgetEditable(summary, viewWriter);
       },
     });
 
     // Convert the <detailWrapper> model into an editable <div> widget.
     conversion.for('editingDowncast').elementToElement({
-      model: 'detailWrapper',
+      model: { name: 'detailWrapper', attributes: ['dataAttributes'] },
       view: (modelElement, { writer: viewWriter }) => {
         const div = viewWriter.createEditableElement('div', {
+          ...getViewDataAttributes(modelElement),
           class: 'details-wrapper',
         });
         return toWidgetEditable(div, viewWriter);
@@ -253,6 +250,7 @@ export default class DetailEditing extends Plugin {
           editor.model.insertContent(modelFragment, selection);
         }
       }
+
     });
 
     this.listenTo(viewDocument, 'keydown', (evt, data) => {
@@ -270,4 +268,32 @@ export default class DetailEditing extends Plugin {
       }
     });
   }
+}
+
+function getDataAttributes(viewElement) {
+  return Array.from(viewElement.getAttributes())
+    .filter(([name]) => name.startsWith('data-'));
+}
+
+function matchElementWithDataAttributes(name, requiredClass) {
+  return (viewElement) => {
+    if (viewElement.name !== name || (requiredClass && !viewElement.hasClass(requiredClass))) {
+      return null;
+    }
+
+    return {
+      name: true,
+      attributes: getDataAttributes(viewElement).map(([key]) => key),
+      ...(requiredClass ? { classes: [requiredClass] } : {}),
+    };
+  };
+}
+
+function getModelDataAttributes(viewElement) {
+  const attributes = getDataAttributes(viewElement);
+  return attributes.length ? { dataAttributes: Object.fromEntries(attributes) } : {};
+}
+
+function getViewDataAttributes(modelElement) {
+  return { ...modelElement.getAttribute('dataAttributes') };
 }
