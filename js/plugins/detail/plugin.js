@@ -133,6 +133,52 @@
               return startEl ? startEl.getAscendant('details', true) : null;
             }
 
+            function getElements(detailsEl) {
+              var elements = {};
+              if (!detailsEl) {
+                return elements;
+              }
+              elements.detail = detailsEl.$;
+              Array.prototype.forEach.call(detailsEl.$.children, function (child) {
+                if (child.tagName.toLowerCase() === 'summary') {
+                  elements.detailSummary = child;
+                } else if (child.tagName.toLowerCase() === 'div' && child.classList.contains('details-wrapper')) {
+                  elements.detailWrapper = child;
+                }
+              });
+              return elements;
+            }
+
+            function getEntries(elements) {
+              var entries = [];
+              Object.keys(elements).forEach(function (target) {
+                Array.prototype.forEach.call(elements[target].attributes, function (attribute) {
+                  if (attribute.name.indexOf('data-') === 0 && attribute.name.indexOf('data-cke-') !== 0 &&
+                      attribute.name !== 'data-widget') {
+                    entries.push({ target: target, suffix: attribute.name.slice(5), value: attribute.value });
+                  }
+                });
+              });
+              return entries;
+            }
+
+            function setEntries(elements, entries) {
+              Object.keys(elements).forEach(function (target) {
+                var element = elements[target];
+                Array.prototype.slice.call(element.attributes).forEach(function (attribute) {
+                  if (attribute.name.indexOf('data-') === 0 && attribute.name.indexOf('data-cke-') !== 0 &&
+                      attribute.name !== 'data-widget') {
+                    element.removeAttribute(attribute.name);
+                  }
+                });
+                entries.forEach(function (entry) {
+                  if (entry.target === target) {
+                    element.setAttribute('data-' + entry.suffix, entry.value);
+                  }
+                });
+              });
+            }
+
             return {
               title: Drupal.t('Details properties'),
               minWidth: 300,
@@ -146,6 +192,11 @@
                       id: 'name',
                       label: Drupal.t('Name (optional)'),
                       setup: function () {},
+                    },
+                    {
+                      type: 'html',
+                      id: 'dataAttributes',
+                      html: '<div class="ck-details-data-attributes"></div>',
                     }
                   ]
                 }
@@ -154,35 +205,47 @@
                 // Prefill when inside existing <details>.
                 var sel = editor.getSelection();
                 var detailsEl = getDetailsElement(sel);
+                var dialog = this;
+                this._detailsElement = detailsEl;
                 var current = detailsEl ? (detailsEl.getAttribute('name') || '') : '';
                 this.setValueOf('info', 'name', current);
+                if (!this._dataAttributes) {
+                  var container = this.getContentElement('info', 'dataAttributes').getElement().$;
+                  this._dataAttributes = Drupal.ckeditorDetailsDataAttributes.create(container, {
+                    reservedSuffixes: ['widget'],
+                    addFocusable: function (element) {
+                      dialog.addFocusable(new CKEDITOR.dom.element(element));
+                    },
+                  });
+                }
+                this._dataAttributes.setEntries(getEntries(getElements(detailsEl)));
               },
               onOk: function () {
                 var value = String(this.getValueOf('info', 'name') || '').trim();
-                var sel = editor.getSelection();
-                var detailsEl = getDetailsElement(sel);
-
-                if (detailsEl) {
-                  // Edit existing.
-                  if (value === '') {
-                    detailsEl.removeAttribute('name');
-                  } else {
-                    detailsEl.setAttribute('name', value);
-                  }
-                } else {
-                  // Insert new, then apply attribute if provided.
-                  editor.execCommand('detail');
-                  // After inserting, try to get the newly inserted widget element.
-                  sel = editor.getSelection();
-                  var selected = getDetailsElement(sel);
-                  if (selected && selected.getName && selected.getName() === 'details') {
-                    if (value === '') {
-                      selected.removeAttribute('name');
-                    } else {
-                      selected.setAttribute('name', value);
-                    }
-                  }
+                var entries = this._dataAttributes.getEntries();
+                if (!entries) {
+                  return false;
                 }
+                var detailsEl = this._detailsElement;
+
+                if (!detailsEl) {
+                  editor.execCommand('detail');
+                  detailsEl = getDetailsElement(editor.getSelection());
+                  this._detailsElement = detailsEl;
+                }
+                var elements = getElements(detailsEl);
+                if (!detailsEl || entries.some(function (entry) { return !elements[entry.target]; })) {
+                  this._dataAttributes.showError(Drupal.t('The selected accordion element is missing.'));
+                  return false;
+                }
+                editor.fire('saveSnapshot');
+                if (value === '') {
+                  detailsEl.removeAttribute('name');
+                } else {
+                  detailsEl.setAttribute('name', value);
+                }
+                setEntries(elements, entries);
+                editor.fire('saveSnapshot');
               }
             };
           });

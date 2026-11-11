@@ -1,6 +1,15 @@
 # This adds the plugin JavaScript to the page.
 # cSpell:ignore detail
 
+data_attributes:
+  css:
+    theme:
+      css/detail.attributes.css: {}
+  js:
+    js/detail-data-attributes.js: {}
+  dependencies:
+    - core/drupal
+
 detail:
   css:
     theme:
@@ -9,6 +18,7 @@ detail:
     js/build/detail.js: { preprocess: false, minified: true }
   dependencies:
     - core/ckeditor5
+    - ckeditor_details/data_attributes
 
 # Loaded in the text format configuration form to provide styling for the icon
 # used in toolbar config.

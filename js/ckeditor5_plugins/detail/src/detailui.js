@@ -6,6 +6,7 @@ import { Command, Plugin } from 'ckeditor5/src/core';
 import { ClickObserver } from 'ckeditor5/src/engine';
 import { ButtonView, ContextualBalloon, View } from 'ckeditor5/src/ui';
 import icon from '../../../../icons/detail.svg';
+import { getDetailElements, getDataAttributeEntries, setDataAttributeEntries } from './dataattributes';
 
 function getSelectedDetail(selection) {
   const selectedElement = selection.getSelectedElement();
@@ -92,6 +93,10 @@ export default class DetailUI extends Plugin {
             Drupal.t('Open by default'),
           ],
         },
+        {
+          tag: 'div',
+          attributes: { class: 'ck-details-data-attributes' },
+        },
         saveButton,
         cancelButton,
       ],
@@ -100,6 +105,9 @@ export default class DetailUI extends Plugin {
     formView.render();
     const inputEl = formView.element.querySelector('input.ck-details-name-input');
     const openInputEl = formView.element.querySelector('input.ck-details-open-input');
+    const dataAttributes = Drupal.ckeditorDetailsDataAttributes.create(
+      formView.element.querySelector('.ck-details-data-attributes'),
+    );
     const ownerDocument = formView.element.ownerDocument;
     const closeOnOutsideInteraction = (event) => {
       if (!formView.element.contains(event.target)) {
@@ -124,8 +132,17 @@ export default class DetailUI extends Plugin {
     const applyValue = () => {
       const trimmed = inputEl ? String(inputEl.value).trim() : '';
       const isOpen = openInputEl ? openInputEl.checked : false;
+      const entries = dataAttributes.getEntries();
+      if (!entries) {
+        return;
+      }
 
       if (activeDetail) {
+        const elements = getDetailElements(activeDetail);
+        if (entries.some((entry) => !elements[entry.target])) {
+          dataAttributes.showError(Drupal.t('The selected accordion element is missing.'));
+          return;
+        }
         editor.model.change((writer) => {
           if (trimmed === '') {
             writer.removeAttribute('name', activeDetail);
@@ -137,9 +154,10 @@ export default class DetailUI extends Plugin {
           } else {
             writer.removeAttribute('open', activeDetail);
           }
+          setDataAttributeEntries(writer, elements, entries);
         });
       } else {
-        editor.execute('insertDetail', { name: trimmed, open: isOpen });
+        editor.execute('insertDetail', { name: trimmed, open: isOpen, dataAttributes: entries });
       }
       closeForm();
       editor.editing.view.focus();
@@ -158,6 +176,7 @@ export default class DetailUI extends Plugin {
       if (openInputEl) {
         openInputEl.checked = Boolean(activeDetail && activeDetail.getAttribute('open'));
       }
+      dataAttributes.setEntries(activeDetail ? getDataAttributeEntries(getDetailElements(activeDetail)) : []);
       balloon.add({
         view: formView,
         position: { target },
@@ -190,7 +209,7 @@ export default class DetailUI extends Plugin {
         event.preventDefault();
         closeForm();
         editor.editing.view.focus();
-      } else if (event.key === 'Enter' && event.target === inputEl) {
+      } else if (event.key === 'Enter' && event.target.tagName === 'INPUT' && event.target.type === 'text') {
         event.preventDefault();
         applyValue();
       }

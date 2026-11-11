@@ -1,0 +1,133 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Detail properties test</title>
+<pre id="result">Running</pre>
+<script>window.Drupal = { t: value => value };</script>
+<script src="../node_modules/ckeditor5/build/ckeditor5-dll.js"></script>
+<script src="../js/detail-data-attributes.js"></script>
+<script src="../js/build/detail.js"></script>
+<script>
+  const result = document.getElementById('result');
+  const assert = (condition, message) => {
+    if (!condition) throw new Error(message);
+  };
+  try {
+    const Editor = CKEditor5.dll('./src/core.js').Editor;
+    const editor = new Editor();
+    editor.model.document.createRoot();
+    editor.model.schema.register('paragraph', { inheritAllFrom: '$block' });
+    editor.conversion.elementToElement({ model: 'paragraph', view: 'p' });
+    const [DetailEditing, DetailUI] = CKEditor5.detail.Detail.requires;
+    new DetailEditing(editor).init();
+    let form;
+    let buttonFactory;
+    const balloon = {
+      add: ({ view }) => { form = view.element; document.body.appendChild(form); },
+      remove: view => view.element.remove(),
+    };
+    editor.plugins.get = name => {
+      assert(name === 'ContextualBalloon', 'Unexpected plugin: ' + name);
+      return balloon;
+    };
+    editor.ui = { componentFactory: { add: (name, factory) => { buttonFactory = factory; } } };
+    const ui = new DetailUI(editor);
+    ui.init();
+    const button = buttonFactory(editor.locale);
+    button.render();
+    document.body.appendChild(button.element);
+    const open = () => button.fire('execute');
+    const add = (target, suffix, value) => {
+      form.querySelector('.ck-details-data-add').click();
+      const row = Array.from(form.querySelectorAll('.ck-details-data-row')).pop();
+      row.querySelector('select').value = target;
+      row.querySelector('.ck-details-data-suffix').value = suffix;
+      row.querySelector('.ck-details-data-value').value = value;
+      return row;
+    };
+    const save = () => form.querySelector('.ck-button-save').click();
+    const output = () => {
+      const root = document.createElement('div');
+      root.innerHTML = editor.data.get();
+      return root.querySelector('details');
+    };
+
+    editor.data.set('<p>Before</p>');
+    open();
+    form.querySelector('.ck-details-name-input').value = 'group';
+    form.querySelector('.ck-details-open-input').checked = true;
+    add('detail', 'feature', 'one');
+    add('detailSummary', 'title', '');
+    add('detailWrapper', 'content', 'body');
+    save();
+    let details = output();
+    assert(details.getAttribute('data-feature') === 'one', 'Insert details attribute');
+    assert(details.querySelector('summary').getAttribute('data-title') === '', 'Insert empty summary attribute');
+    assert(details.querySelector('.details-wrapper').getAttribute('data-content') === 'body', 'Insert wrapper attribute');
+    assert(details.getAttribute('name') === 'group' && details.hasAttribute('open'), 'Insert properties');
+
+    const detail = Array.from(editor.model.document.getRoot().getChildren()).find(child => child.name === 'detail');
+    const multilineValue = 'first\r\nsecond';
+    editor.model.change(writer => {
+      writer.setAttribute('dataAttributes', {
+        ...detail.getAttribute('dataAttributes'),
+        'data-cke-internal': 'keep',
+        'data-multiline': multilineValue,
+      }, detail);
+      writer.setSelection(detail, 'on');
+    });
+    open();
+    assert(form.querySelectorAll('.ck-details-data-row').length === 4, 'Existing attributes loaded');
+    const multilineRow = Array.from(form.querySelectorAll('.ck-details-data-row'))
+      .find(row => row.querySelector('.ck-details-data-suffix').value === 'multiline');
+    assert(multilineRow.querySelector('.ck-details-data-value').value === 'firstsecond',
+      'Text input should sanitize line breaks');
+    save();
+    assert(detail.getAttribute('dataAttributes')['data-multiline'] === multilineValue,
+      'Unchanged multiline attribute value must be preserved');
+
+    open();
+    const rows = form.querySelectorAll('.ck-details-data-row');
+    const featureRow = Array.from(rows).find(row =>
+      row.querySelector('.ck-details-data-suffix').value === 'feature');
+    const titleRow = Array.from(rows).find(row =>
+      row.querySelector('.ck-details-data-suffix').value === 'title');
+    const contentRow = Array.from(rows).find(row =>
+      row.querySelector('.ck-details-data-suffix').value === 'content');
+    featureRow.querySelector('.ck-details-data-suffix').value = 'renamed';
+    featureRow.querySelector('select').value = 'detailWrapper';
+    titleRow.querySelector('.ck-details-data-remove').click();
+    contentRow.querySelector('.ck-details-data-value').value = 'updated';
+    save();
+    details = output();
+    assert(!details.hasAttribute('data-feature'), 'Renamed/moved attribute removed from original');
+    assert(!details.querySelector('summary').hasAttribute('data-title'), 'Removed attribute deleted');
+    assert(details.querySelector('.details-wrapper').getAttribute('data-renamed') === 'one', 'Moved attribute saved');
+    assert(details.querySelector('.details-wrapper').getAttribute('data-content') === 'updated', 'Edited attribute saved');
+    assert(details.getAttribute('data-cke-internal') === 'keep', 'Reserved data attribute preserved');
+    assert(detail.getAttribute('dataAttributes')['data-multiline'] === multilineValue,
+      'Unchanged multiline attribute value must survive other edits');
+
+    open();
+    const prior = editor.data.get();
+    const invalid = add('detail', 'bad name', 'x');
+    save();
+    assert(form.isConnected && form.querySelector('[role=alert]').textContent, 'Invalid suffix rejected');
+    invalid.querySelector('.ck-details-data-suffix').value = 'valid';
+    add('detail', 'VALID', 'duplicate');
+    save();
+    assert(form.isConnected && form.querySelector('[role=alert]').textContent, 'Duplicate suffix rejected');
+    form.querySelector('.ck-button-cancel').click();
+    assert(editor.data.get() === prior, 'Cancel must discard changes');
+
+    open();
+    add('detail', 'cke-private', 'x');
+    save();
+    assert(form.isConnected && form.querySelector('[role=alert]').textContent, 'Reserved prefix rejected');
+    form.querySelector('.ck-button-cancel').click();
+    ui.destroy();
+    result.textContent = 'PASS';
+  } catch (error) {
+    result.textContent = 'FAIL: ' + error.stack;
+    throw error;
+  }
+</script>

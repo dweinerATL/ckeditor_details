@@ -5,6 +5,7 @@
 // cSpell:ignore detailediting
 
 import { Command } from 'ckeditor5/src/core';
+import { setDataAttributeEntries } from './dataattributes';
 
 export default class InsertDetailCommand extends Command {
   execute(options = {}) {
@@ -48,6 +49,7 @@ function createDetail(writer, editor, options = {}) {
   const detail = writer.createElement('detail', attrs);
   const detailSummary = writer.createElement('detailSummary');
   const detailWrapper = writer.createElement('detailWrapper');
+  setDataAttributeEntries(writer, { detail, detailSummary, detailWrapper }, options.dataAttributes || []);
 
   // Append the title and description elements to the detail, which matches
   // the parent/child relationship as defined in their schemas.

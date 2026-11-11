@@ -1,0 +1,148 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>CKEditor 4 detail properties test</title>
+<pre id="result">Running</pre>
+<textarea id="editor"></textarea>
+<script>window.Drupal = { t: value => value }; window.jQuery = {};</script>
+<script src="../js/detail-data-attributes.js"></script>
+<script>
+  const result = document.getElementById('result');
+  const assert = (condition, message) => {
+    if (!condition) throw new Error(message);
+  };
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+  async function run() {
+    const url = new URLSearchParams(location.search).get('ckeditor4');
+    assert(url, 'Specify ?ckeditor4=/path/to/ckeditor.js on the same server');
+    const scriptUrl = new URL(url, location.href);
+    assert((scriptUrl.protocol === 'http:' || scriptUrl.protocol === 'https:') &&
+      scriptUrl.origin === location.origin, 'CKEditor 4 must be loaded from the same server');
+    window.CKEDITOR_BASEPATH = new URL('.', scriptUrl).href;
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = scriptUrl.href;
+      script.onload = resolve;
+      script.onerror = () => reject(new Error('Could not load CKEditor 4'));
+      document.head.appendChild(script);
+    });
+    CKEDITOR.plugins.addExternal('detail', new URL('../js/plugins/detail/', location.href).href, 'plugin.js');
+    const editor = CKEDITOR.replace('editor', {
+      extraPlugins: 'detail',
+      language: 'en',
+      customConfig: '',
+      stylesSet: [],
+      contentsCss: [],
+      versionCheck: false,
+    });
+    await new Promise((resolve, reject) => {
+      editor.on('instanceReady', resolve);
+      setTimeout(() => reject(new Error('CKEditor 4 initialization timed out')), 10000);
+    });
+    const open = async () => {
+      editor.execCommand('detailName');
+      await wait(100);
+      const dialog = CKEDITOR.dialog.getCurrent();
+      assert(dialog, 'Properties dialog did not open');
+      return dialog;
+    };
+    const add = (root, target, suffix, value) => {
+      root.querySelector('.ck-details-data-add').click();
+      const row = Array.from(root.querySelectorAll('.ck-details-data-row')).pop();
+      row.querySelector('select').value = target;
+      row.querySelector('.ck-details-data-suffix').value = suffix;
+      row.querySelector('.ck-details-data-value').value = value;
+      return row;
+    };
+    const assertFocusableControls = dialog => {
+      const root = dialog.getElement().$;
+      const registered = new Set(dialog._.focusList.map(item => item.element.$));
+      const controls = root.querySelectorAll(
+        '.ck-details-data-attributes select, .ck-details-data-attributes input, .ck-details-data-attributes button',
+      );
+      assert(Array.from(controls).every(control => registered.has(control)),
+        'Data attribute controls must be registered with the dialog');
+    };
+    let dialog = await open();
+    let root = dialog.getElement().$;
+    dialog.setValueOf('info', 'name', 'group');
+    add(root, 'detail', 'feature', 'one');
+    add(root, 'detailSummary', 'heading', '');
+    add(root, 'detailWrapper', 'body', 'two');
+    assertFocusableControls(dialog);
+    dialog.getButton('ok').click();
+    await wait(100);
+    let data = editor.getData();
+    assert(data.includes('data-feature="one"') && data.includes('data-heading=""') &&
+      data.includes('data-body="two"') && data.includes('name="group"'), 'Insert with filtering: ' + data);
+
+    dialog = await open();
+    root = dialog.getElement().$;
+    const rows = Array.from(root.querySelectorAll('.ck-details-data-row'));
+    assert(rows.length === 3, 'Existing attributes not loaded');
+    assertFocusableControls(dialog);
+    const detail = rows.find(row => row.querySelector('.ck-details-data-suffix').value === 'feature');
+    const summary = rows.find(row => row.querySelector('.ck-details-data-suffix').value === 'heading');
+    const wrapper = rows.find(row => row.querySelector('.ck-details-data-suffix').value === 'body');
+    detail.querySelector('select').value = 'detailWrapper';
+    detail.querySelector('.ck-details-data-suffix').value = 'moved';
+    summary.querySelector('.ck-details-data-remove').click();
+    wrapper.querySelector('.ck-details-data-value').value = 'changed';
+    dialog.getButton('ok').click();
+    await wait(100);
+    data = editor.getData();
+    assert(data.includes('data-moved="one"') && data.includes('data-body="changed"') &&
+      !data.includes('data-feature') && !data.includes('data-heading'), 'Edit/move/remove: ' + data);
+    editor.execCommand('undo');
+    await wait(100);
+    data = editor.getData();
+    assert(data.includes('data-feature="one"') && data.includes('data-heading=""') &&
+      data.includes('data-body="two"'), 'Undo: ' + data);
+
+    dialog = await open();
+    root = dialog.getElement().$;
+    add(root, 'detail', 'bad name', 'value');
+    dialog.getButton('ok').click();
+    assert(CKEDITOR.dialog.getCurrent() && root.querySelector('[role=alert]').textContent,
+      'Invalid suffix must keep the dialog open');
+    dialog.getButton('cancel').click();
+    assert(editor.getData() === data, 'Cancel must discard changes');
+
+    const multilineValue = 'first\r\nsecond';
+    await new Promise(resolve => editor.setData(
+      '<details data-imported="keep" data-multiline="first&#13;&#10;second"><summary data-existing="yes">Imported</summary>' +
+      '<div class="details-wrapper" data-other="value"><p>Body</p></div></details>', resolve,
+    ));
+    const widget = Object.values(editor.widgets.instances)[0];
+    assert(widget, 'Imported details not recognized as a widget');
+    widget.focus();
+    dialog = await open();
+    root = dialog.getElement().$;
+    assert(root.querySelectorAll('.ck-details-data-row').length === 4, 'Imported attributes not loaded');
+    const multilineRow = Array.from(root.querySelectorAll('.ck-details-data-row')).find(row =>
+      row.querySelector('.ck-details-data-suffix').value === 'multiline');
+    assert(multilineRow.querySelector('.ck-details-data-value').value === 'firstsecond',
+      'Text input should sanitize line breaks');
+    assertFocusableControls(dialog);
+    dialog.getButton('ok').click();
+    await wait(100);
+    const imported = new DOMParser().parseFromString(editor.getData(), 'text/html').querySelector('details');
+    assert(imported.getAttribute('data-multiline') === multilineValue,
+      'Unchanged multiline attribute value must be preserved');
+
+    dialog = await open();
+    root = dialog.getElement().$;
+    add(root, 'detail', 'additional', 'new');
+    dialog.getButton('ok').click();
+    await wait(100);
+    data = editor.getData();
+    assert(data.includes('data-imported="keep"') && data.includes('data-existing="yes"') &&
+      data.includes('data-other="value"') && data.includes('data-additional="new"'),
+    'Imported attributes not preserved: ' + data);
+    result.textContent = 'PASS';
+  }
+  run().catch(error => {
+    result.textContent = 'FAIL: ' + error.stack;
+    throw error;
+  });
+</script>
