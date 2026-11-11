@@ -1,0 +1,94 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Detail data attribute conversion test</title>
+<pre id="result">Running</pre>
+<script src="../node_modules/ckeditor5/build/ckeditor5-dll.js"></script>
+<script src="../js/build/detail.js"></script>
+<script>
+  const result = document.getElementById('result');
+  const assert = (condition, message) => {
+    if (!condition) {
+      throw new Error(message);
+    }
+  };
+
+  try {
+    const editor = new CKEditor5.core.Editor();
+    editor.model.document.createRoot();
+    editor.model.schema.register('paragraph', { inheritAllFrom: '$block' });
+    editor.conversion.elementToElement({ model: 'paragraph', view: 'p' });
+    const DetailEditing = CKEditor5.detail.Detail.requires[0];
+    new DetailEditing(editor).init();
+
+    const unconsumed = [];
+    editor.data.upcastDispatcher.on('element', (event, data, api) => {
+      for (const [name] of data.viewItem.getAttributes()) {
+        if (name.startsWith('data-') && api.consumable.test(data.viewItem, { attributes: [name] })) {
+          unconsumed.push(name);
+        }
+      }
+    }, { priority: 'low' });
+
+    const input = '<details name="group" open data-id="one" data-empty="" data-foo-bar="&amp;">' +
+      '<summary data-summary="heading">Title</summary>' +
+      '<div class="details-wrapper" data-body="content"><p>Body</p></div></details>';
+    editor.data.set(input);
+    const detail = editor.model.document.getRoot().getChild(0);
+    const summary = detail.getChild(0);
+    const wrapper = detail.getChild(1);
+    assert(unconsumed.length === 0, 'Data attributes must be consumed by upcast');
+    const dataAttributes = detail.getAttribute('dataAttributes');
+    assert(Object.keys(dataAttributes).length === 3 &&
+      dataAttributes['data-empty'] === '' && dataAttributes['data-foo-bar'] === '&' &&
+      dataAttributes['data-id'] === 'one', 'Only data attributes should be stored in the model');
+
+    function checkOutput() {
+      const container = document.createElement('div');
+      container.innerHTML = editor.data.get();
+      const output = container.querySelector('details');
+      assert(output.getAttribute('data-id') === 'one', 'Details data attribute lost');
+      assert(output.getAttribute('data-empty') === '', 'Empty data attribute lost');
+      assert(output.getAttribute('data-foo-bar') === '&', 'Escaped value lost');
+      assert(output.querySelector('summary').getAttribute('data-summary') === 'heading', 'Summary data lost');
+      assert(output.querySelector('.details-wrapper').getAttribute('data-body') === 'content', 'Wrapper data lost');
+      return output;
+    }
+
+    let output = checkOutput();
+    assert(output.getAttribute('name') === 'group' && output.hasAttribute('open'), 'Details properties lost');
+    assert(editor.editing.mapper.toViewElement(detail).getAttribute('data-id') === 'one', 'Editing details data lost');
+    assert(editor.editing.mapper.toViewElement(summary).getAttribute('data-summary') === 'heading', 'Editing summary data lost');
+    assert(editor.editing.mapper.toViewElement(wrapper).getAttribute('data-body') === 'content', 'Editing wrapper data lost');
+    editor.model.change(writer => {
+      writer.removeAttribute('name', detail);
+      writer.removeAttribute('open', detail);
+      writer.setAttribute('dataAttributes', { 'data-summary': 'changed' }, summary);
+      writer.setAttribute('dataAttributes', { 'data-body': 'updated' }, wrapper);
+    });
+    output = document.createElement('div');
+    output.innerHTML = editor.data.get();
+    assert(!output.querySelector('details').hasAttribute('name'), 'Removed name returned');
+    assert(!output.querySelector('details').hasAttribute('open'), 'Removed open returned');
+    assert(output.querySelector('summary').getAttribute('data-summary') === 'changed', 'Summary update lost');
+    assert(output.querySelector('.details-wrapper').getAttribute('data-body') === 'updated', 'Wrapper update lost');
+    assert(output.querySelector('details').getAttribute('data-id') === 'one', 'Details data lost after editing');
+    assert(editor.editing.mapper.toViewElement(summary).getAttribute('data-summary') === 'changed', 'Editing summary not updated');
+    assert(editor.editing.mapper.toViewElement(wrapper).getAttribute('data-body') === 'updated', 'Editing wrapper not updated');
+
+    editor.data.set('<details data-level="outer"><summary>Outer</summary><div class="details-wrapper">' +
+      '<details data-level="inner"><summary>Inner</summary><div class="details-wrapper"><p>Body</p></div></details>' +
+      '</div></details>');
+    output = document.createElement('div');
+    output.innerHTML = editor.data.get();
+    const nestedDetails = output.querySelectorAll('details');
+    assert(nestedDetails.length === 2 && nestedDetails[0].getAttribute('data-level') === 'outer' &&
+      nestedDetails[1].getAttribute('data-level') === 'inner', 'Nested details data lost');
+
+    editor.data.set('<details><summary>Plain</summary><div class="details-wrapper"><p>Text</p></div></details>');
+    assert(!editor.data.get().includes('data-'), 'Unexpected data attributes on plain accordion');
+    result.textContent = 'PASS';
+  } catch (error) {
+    result.textContent = 'FAIL: ' + error.stack;
+    throw error;
+  }
+</script>

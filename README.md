@@ -18,6 +18,21 @@ Submit bug reports and feature suggestions, or track changes in the
 Go to the Text formats and editors settings (/admin/config/content/formats) and
 add the Details button to any CKEditor-enabled text format you want.
 
+In CKEditor 5, use the Details toolbar button to create an accordion. Enter an
+optional Name and check Open by default to include the `open` attribute.
+
+Click an existing accordion's summary or body to show its properties form beside
+the element, without interrupting content editing. Edit Name or toggle Open by
+default, then click Save. Clearing Name removes the `name` attribute; unchecking
+Open by default removes `open`. Cancel or click outside the form to discard
+unsaved changes. The toolbar button also edits the selected accordion.
+
+Existing `data-*` attributes on the accordion's `details`, `summary`, and
+`div.details-wrapper` elements are preserved. Other elements inside the
+accordion are governed by their own editor plugins and the text format's HTML
+filter settings. Text format filters must also permit the attributes to retain
+them in saved content.
+
 ## Installation
 
 1. Download the plugin from [ckeditor](http://ckeditor.com/addon/detail)
@@ -29,6 +44,12 @@ Each filter format will now have a config tab for this plugin.
 ## Dependencies
 
 This module requires the core CKEditor module.
+
+## Development
+
+After installing the npm dependencies, run `npm run build`. To check CKEditor 5
+attribute conversion, serve the repository locally (for example, with
+`python3 -m http.server`) and open `/tests/detail-data-attributes.html`.
 
 ## Uninstallation
 

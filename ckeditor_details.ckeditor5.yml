@@ -33,9 +33,12 @@ ckeditor_details_detail:
       - <details>
       - <details name>
       - <details open>
+      - <details data-*>
       - <summary>
+      - <summary data-*>
       - <div>
       - <div class="details-wrapper">
+      - <div data-*>
     # *Additional configuration properties*
     # conditions: for setting additional criteria that must be met for the
     #   plugin to be active.

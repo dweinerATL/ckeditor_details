@@ -3,6 +3,7 @@
  */
 
 import { Command, Plugin } from 'ckeditor5/src/core';
+import { ClickObserver } from 'ckeditor5/src/engine';
 import { ButtonView, ContextualBalloon, View } from 'ckeditor5/src/ui';
 import icon from '../../../../icons/detail.svg';
 
@@ -144,7 +145,7 @@ export default class DetailUI extends Plugin {
       editor.editing.view.focus();
     };
 
-    const openForm = (detailElement, target) => {
+    const openForm = (detailElement, target, focusInput = true) => {
       if (editor.isReadOnly) {
         return;
       }
@@ -164,7 +165,7 @@ export default class DetailUI extends Plugin {
       isFormOpen = true;
       ownerDocument.addEventListener('mousedown', closeOnOutsideInteraction, true);
       ownerDocument.addEventListener('focusin', closeOnOutsideInteraction);
-      if (inputEl) {
+      if (focusInput && inputEl) {
         inputEl.focus();
         inputEl.select();
       }
@@ -195,23 +196,20 @@ export default class DetailUI extends Plugin {
       }
     });
 
-    this.listenTo(viewDocument, 'mousedown', (evt, data) => {
+    editor.editing.view.addObserver(ClickObserver);
+    this.listenTo(viewDocument, 'click', (evt, data) => {
       const selectedView = data.target;
       if (!selectedView) {
         return;
       }
 
       let detailsView = selectedView;
-      let isInsideEditable = false;
 
       while (detailsView && !detailsView.is('element', 'details')) {
-        if (detailsView.is('editableElement')) {
-          isInsideEditable = true;
-        }
         detailsView = detailsView.parent;
       }
 
-      if (!detailsView || isInsideEditable) {
+      if (!detailsView) {
         if (isFormOpen) {
           closeForm();
         }
@@ -222,7 +220,8 @@ export default class DetailUI extends Plugin {
       if (detailElement && detailElement.is('element', 'detail')) {
         const target = editor.editing.view.domConverter.mapViewToDom(detailsView);
         if (target) {
-          openForm(detailElement, target);
+          // Show properties without moving the caret out of the clicked content.
+          openForm(detailElement, target, false);
         }
       }
     }, { priority: 'lowest' });
