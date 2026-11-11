@@ -31,7 +31,7 @@ class DetailPlugin extends PluginBase implements CKEditorPluginInterface, CKEdit
    * {@inheritdoc}
    */
   public function getLibraries(Editor $editor) {
-    return ['core/drupal.jquery'];
+    return ['core/drupal.jquery', 'ckeditor_details/data_attributes'];
   }
 
   /**

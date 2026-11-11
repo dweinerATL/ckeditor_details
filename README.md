@@ -28,10 +28,15 @@ Open by default removes `open`. Cancel or click outside the form to discard
 unsaved changes. The toolbar button also edits the selected accordion.
 
 Existing `data-*` attributes on the accordion's `details`, `summary`, and
-`div.details-wrapper` elements are preserved. Other elements inside the
-accordion are governed by their own editor plugins and the text format's HTML
-filter settings. Text format filters must also permit the attributes to retain
-them in saved content.
+`div.details-wrapper` elements are preserved. In either editor's properties
+panel, use Add data attribute to add as many rows as needed. Choose the element,
+enter the suffix without `data-` (for example, `feature`), and enter its value.
+Edit or remove rows to change existing attributes. Empty values are allowed;
+suffixes must be valid and unique on each element. The `cke-` suffix prefix is
+reserved for CKEditor, as is `widget` in CKEditor 4. Cancel discards changes.
+Other elements inside the accordion are governed by their own editor plugins
+and the text format's HTML filter settings. Text format filters must also permit
+the attributes to retain them in saved content.
 
 ## Installation
 
@@ -48,8 +53,12 @@ This module requires the core CKEditor module.
 ## Development
 
 After installing the npm dependencies, run `npm run build`. To check CKEditor 5
-attribute conversion, serve the repository locally (for example, with
-`python3 -m http.server`) and open `/tests/detail-data-attributes.html`.
+attribute conversion and the properties panel, serve the repository locally
+(for example, with `python3 -m http.server`) and open
+`/tests/detail-data-attributes.html` and `/tests/detail-properties.html`.
+For CKEditor 4, serve both this module and an existing CKEditor 4 distribution
+from the same local server, and open `/tests/detail-properties-ckeditor4.html`
+with `?ckeditor4=/path/to/ckeditor.js` pointing to that distribution.
 
 ## Uninstallation
 

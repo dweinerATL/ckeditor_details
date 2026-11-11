@@ -24,12 +24,17 @@
 .ck.ck-reset_all.ck-details-name-form,
 .ck-details-name-form {
   padding-left: 0.5rem !important; /* Requested left padding */
-  display: inline-flex !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
   align-items: center !important;
   gap: 0.5rem; /* Modern spacing between items */
   background: #fff; /* Make the bubble content stand out */
   border: 1px solid #000; /* Requested border */
   border-radius: 4px; /* small rounding for aesthetics (optional) */
+}
+
+.ck-details-name-form .ck-details-data-attributes {
+  flex-basis: 100%;
 }
 
 .ck-details-name-label {

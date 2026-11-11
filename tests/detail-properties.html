@@ -1,0 +1,110 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Detail properties test</title>
+<pre id="result">Running</pre>
+<script>window.Drupal = { t: value => value };</script>
+<script src="../node_modules/ckeditor5/build/ckeditor5-dll.js"></script>
+<script src="../js/detail-data-attributes.js"></script>
+<script src="../js/build/detail.js"></script>
+<script>
+  const result = document.getElementById('result');
+  const assert = (condition, message) => {
+    if (!condition) throw new Error(message);
+  };
+  try {
+    const editor = new CKEditor5.core.Editor();
+    editor.model.document.createRoot();
+    editor.model.schema.register('paragraph', { inheritAllFrom: '$block' });
+    editor.conversion.elementToElement({ model: 'paragraph', view: 'p' });
+    const [DetailEditing, DetailUI] = CKEditor5.detail.Detail.requires;
+    new DetailEditing(editor).init();
+    let form;
+    let buttonFactory;
+    const balloon = {
+      add: ({ view }) => { form = view.element; document.body.appendChild(form); },
+      remove: view => view.element.remove(),
+    };
+    editor.plugins.get = name => {
+      assert(name === 'ContextualBalloon', 'Unexpected plugin: ' + name);
+      return balloon;
+    };
+    editor.ui = { componentFactory: { add: (name, factory) => { buttonFactory = factory; } } };
+    const ui = new DetailUI(editor);
+    ui.init();
+    const button = buttonFactory(editor.locale);
+    button.render();
+    document.body.appendChild(button.element);
+    const open = () => button.fire('execute');
+    const add = (target, suffix, value) => {
+      form.querySelector('.ck-details-data-add').click();
+      const row = Array.from(form.querySelectorAll('.ck-details-data-row')).pop();
+      row.querySelector('select').value = target;
+      row.querySelector('.ck-details-data-suffix').value = suffix;
+      row.querySelector('.ck-details-data-value').value = value;
+      return row;
+    };
+    const save = () => form.querySelector('.ck-button-save').click();
+    const output = () => {
+      const root = document.createElement('div');
+      root.innerHTML = editor.data.get();
+      return root.querySelector('details');
+    };
+
+    editor.data.set('<p>Before</p>');
+    open();
+    form.querySelector('.ck-details-name-input').value = 'group';
+    form.querySelector('.ck-details-open-input').checked = true;
+    add('detail', 'feature', 'one');
+    add('detailSummary', 'title', '');
+    add('detailWrapper', 'content', 'body');
+    save();
+    let details = output();
+    assert(details.getAttribute('data-feature') === 'one', 'Insert details attribute');
+    assert(details.querySelector('summary').getAttribute('data-title') === '', 'Insert empty summary attribute');
+    assert(details.querySelector('.details-wrapper').getAttribute('data-content') === 'body', 'Insert wrapper attribute');
+    assert(details.getAttribute('name') === 'group' && details.hasAttribute('open'), 'Insert properties');
+
+    const detail = Array.from(editor.model.document.getRoot().getChildren()).find(child => child.name === 'detail');
+    editor.model.change(writer => {
+      writer.setAttribute('dataAttributes', { ...detail.getAttribute('dataAttributes'), 'data-cke-internal': 'keep' }, detail);
+      writer.setSelection(detail, 'on');
+    });
+    open();
+    assert(form.querySelectorAll('.ck-details-data-row').length === 3, 'Existing attributes loaded');
+    const rows = form.querySelectorAll('.ck-details-data-row');
+    rows[0].querySelector('.ck-details-data-suffix').value = 'renamed';
+    rows[0].querySelector('select').value = 'detailWrapper';
+    rows[1].querySelector('.ck-details-data-remove').click();
+    rows[2].querySelector('.ck-details-data-value').value = 'updated';
+    save();
+    details = output();
+    assert(!details.hasAttribute('data-feature'), 'Renamed/moved attribute removed from original');
+    assert(!details.querySelector('summary').hasAttribute('data-title'), 'Removed attribute deleted');
+    assert(details.querySelector('.details-wrapper').getAttribute('data-renamed') === 'one', 'Moved attribute saved');
+    assert(details.querySelector('.details-wrapper').getAttribute('data-content') === 'updated', 'Edited attribute saved');
+    assert(details.getAttribute('data-cke-internal') === 'keep', 'Reserved data attribute preserved');
+
+    open();
+    const prior = editor.data.get();
+    const invalid = add('detail', 'bad name', 'x');
+    save();
+    assert(form.isConnected && form.querySelector('[role=alert]').textContent, 'Invalid suffix rejected');
+    invalid.querySelector('.ck-details-data-suffix').value = 'valid';
+    add('detail', 'VALID', 'duplicate');
+    save();
+    assert(form.isConnected && form.querySelector('[role=alert]').textContent, 'Duplicate suffix rejected');
+    form.querySelector('.ck-button-cancel').click();
+    assert(editor.data.get() === prior, 'Cancel must discard changes');
+
+    open();
+    add('detail', 'cke-private', 'x');
+    save();
+    assert(form.isConnected && form.querySelector('[role=alert]').textContent, 'Reserved prefix rejected');
+    form.querySelector('.ck-button-cancel').click();
+    ui.destroy();
+    result.textContent = 'PASS';
+  } catch (error) {
+    result.textContent = 'FAIL: ' + error.stack;
+    throw error;
+  }
+</script>

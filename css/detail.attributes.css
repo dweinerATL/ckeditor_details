@@ -1,0 +1,31 @@
+.ck-details-data-attributes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ck-details-data-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.ck-details-data-row input,
+.ck-details-data-row select {
+  min-width: 8rem;
+  max-width: 12rem;
+}
+
+.ck-details-data-add {
+  align-self: flex-start;
+}
+
+.ck-details-data-error {
+  color: #b00020;
+}
+
+.ck-details-data-error:empty {
+  display: none;
+}
