@@ -13,7 +13,8 @@
   };
 
   try {
-    const editor = new CKEditor5.core.Editor();
+    const Editor = CKEditor5.dll('./src/core.js').Editor;
+    const editor = new Editor();
     editor.model.document.createRoot();
     editor.model.schema.register('paragraph', { inheritAllFrom: '$block' });
     editor.conversion.elementToElement({ model: 'paragraph', view: 'p' });
